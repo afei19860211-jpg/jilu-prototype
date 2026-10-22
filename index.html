@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<!--
+  PROTOTYPE final-1 — throwaway, 仅供原型确认，勿并入产品代码
+  肌录 · 胜出方案：C 卡片流视觉 × A 功能完备度（2026-09-07 确认，B 出局）
+  11 页 × 底部 5 Tab（训练/动作库/拉伸/历史/我的）
+  需求依据：PRD v1.6（3.1 信息架构 / 5.6.4 计划参数可编辑 / 5.10 训练执行细化 / 5.11 历史全景 / 5.12 我的页）
+            SRS v2.5（4.3.1-4.3.5 / 9.5 组类型 schema 与计时器挂起对策）
+  竞品依据：01需求分析/调研资料/竞品功能调研_2026-09-07.md（训记/Strong/Hevy/Fitbod 交互共识）
+  数据内嵌（真实）：packageData 1335 条计数（详解 270）；EX_0025/EX_0015/EX_1436；T5 8 条；T3 13 套（PT_001 详情）；
+            起止点=奈特图谱整理；加重=PPST 初级 LP；历史/趋势为演示态数据（标注）
+  使用：双击打开（file://）；URL ?page=1..11 可刷新分享
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>肌录 · final-2 原型（C 视觉 × 全功能 · 5 Tab × 13 页）</title>
+<script src="assets/body-paths.js"></script>
+<style>
+/* ============ 基础与舞台 ============ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  background:#1a1f2e;display:flex;align-items:center;justify-content:center;gap:16px;overflow:hidden}
+.mono{font-family:ui-monospace,"SF Mono",Consolas,"Cascadia Mono",Menlo,monospace}
+.stage{display:flex;align-items:center;gap:20px}
+.stage-note{font-size:11px;color:#8b99ae;letter-spacing:.5px;line-height:1.9;width:150px}
+.phone{width:375px;height:812px;background:#000;border-radius:52px;padding:12px;flex:none;position:relative;
+  box-shadow:0 24px 60px rgba(0,0,0,.6),0 0 0 2px #333a4d,0 0 0 6px #14181f}
+.phone::after{content:"";position:absolute;top:22px;left:50%;transform:translateX(-50%);width:110px;height:6px;border-radius:8px;background:#1c2130;z-index:60;pointer-events:none}
+.screen{position:relative;width:100%;height:100%;border-radius:40px;overflow:hidden;background:#0F172A;color:#F1F5F9}
+@media (max-width:640px){body{overflow:auto}.phone{width:100vw;height:100vh;border-radius:0;padding:0;box-shadow:none}.phone::after{display:none}.screen{border-radius:0}.stage-note{display:none}}
+.page-scroll{position:absolute;top:0;left:0;right:0;bottom:60px;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding-bottom:20px}
+.page-scroll::-webkit-scrollbar{display:none}
+.debug-badge{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:70;font-size:11px;color:#8a93a8;
+  background:rgba(100,116,139,.16);border:1px dashed rgba(148,163,184,.5);border-radius:8px;padding:4px 8px;letter-spacing:1px;
+  pointer-events:none;white-space:nowrap;font-family:ui-monospace,Consolas,monospace}
+/* ============ 肌录 design tokens v2（产品化调色：墨蓝底×熔岩橙，脱离 Tailwind 默认值；语义色纪律：橙红=品牌CTA专属 绿=完成态 紫=AI专属 红=危险 金=数字高亮） ============ */
+:root{
+  --bg:#0C1424; --card:#1B2540; --card2:#080E1C; --ink:#F2F6FC; --sub:#9AA8C0; --dim:#7C8BA1; --line:#2E3B58;
+  --acc1:#F26A15; --acc2:#F0483E; --acc3:#FF6B8A; --ok:#34D17C; --warn:#FCA5A5; --gold:#FFBE85; --purple:#8B5CF6;
+  --grad:linear-gradient(90deg,#F26A15,#F0483E); --gradV:linear-gradient(150deg,#F26A15 0%,#F0483E 70%,#E03375 120%);
+  --r-lg:26px; --r-md:22px; --r-sm:16px; --r-xs:8px; --r-pill:999px;
+  /* 字阶（9 档）：9 注释 / 10 眉题 / 11 辅助 / 12 正文 / 14 小标 / 16 数值 / 20 标题 / 26 页题 / 46 英雄数字 */
+  /* 间距刻度：4 / 8 / 12 / 16 / 20 / 24 */
+  --sp1:4px; --sp2:8px; --sp3:12px; --sp4:16px; --sp5:20px; --sp6:24px;
+}
+/* ============ 通用组件 ============ */
+.card{margin:0 16px 14px;border-radius:var(--r-lg);overflow:hidden;background:var(--card);border:1px solid var(--line)}
+.sec-cap{font-size:10px;letter-spacing:2px;color:#FB923C;font-weight:700;margin:16px 16px 8px}
+.chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:8px 14px;font-size:11px;
+  border:1px solid var(--line);color:var(--sub);cursor:pointer;user-select:none;background:transparent;white-space:nowrap}
+.chip.on{background:var(--grad);border:none;color:#fff;font-weight:700}
+.badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:8px;line-height:1.6;white-space:nowrap}
+.badge.hl{background:rgba(242,106,21,.15);color:var(--gold);border:1px solid rgba(242,106,21,.4)}
+.badge.plain{background:var(--card2);color:var(--sub);border:1px solid var(--line)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:16px;
+  padding:14px 16px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:1px}
+.btn-grad{background:var(--grad);color:#fff;box-shadow:0 8px 20px rgba(240,72,62,.35)}
+.btn-ghost{background:var(--card);color:var(--sub);border:1px solid var(--line)}
+.src{font-size:9px;color:var(--dim);line-height:1.7;margin:0 18px 6px;display:none}
+body.notes .src{display:block}
+/* 肌肉图色阶 ramp（全局唯一色阶语义：more accent = more training；openGym A2 吸收，color-mix 对 --acc1 派生，换主题自动跟随） */
+.bm-sil{fill:rgba(154,168,192,.16)}
+.bm-m{fill:rgba(154,168,192,.10)}
+.bm-m.l1{fill:color-mix(in srgb,var(--acc1) 32%,#1B2540)}
+.bm-m.l2{fill:color-mix(in srgb,var(--acc1) 56%,#1B2540)}
+.bm-m.l3{fill:color-mix(in srgb,var(--acc1) 78%,#1B2540)}
+.bm-m.l4{fill:var(--acc1)}
+.row{display:flex;align-items:center;gap:10px}.grow{flex:1;min-width:0}
+/* ============ 底部 5 Tab ============ */
+#vnav{position:absolute;bottom:0;left:0;right:0;z-index:50}
+.tabbar{display:flex;height:60px;align-items:stretch;background:rgba(11,17,32,.97);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
+.tb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--dim);cursor:pointer}
+.tb svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7}
+.tb.on{color:#FDBA74}
+.tb.on .ic-wrap{background:rgba(242,106,21,.14);border-radius:12px;padding:1px 10px}
+/* ============ 页头 ============ */
+.c-head{padding:54px 16px 10px}
+.c-head .hi{font-size:12px;color:var(--gold);letter-spacing:2px}
+.c-head h1{font-size:26px;font-weight:900;margin-top:4px;background:linear-gradient(90deg,#F97316,#FB7185);-webkit-background-clip:text;background-clip:text;color:transparent}
+.c-head .sub{font-size:11px;color:var(--sub);margin-top:6px;line-height:1.7}
+/* ============ P1 训练首页 ============ */
+.hero{margin:0 16px 14px;border-radius:var(--r-lg);overflow:hidden;background:var(--gradV);border:none;color:#fff;padding:16px;position:relative}
+.hero .tag{font-size:10px;background:rgba(255,255,255,.22);border-radius:99px;padding:4px 10px;display:inline-block;letter-spacing:1px}
+.hero h3{font-size:20px;font-weight:900;margin:10px 0 4px}
+.hero .sub2{font-size:11px;opacity:.9}
+.hero .stats{display:flex;gap:16px;margin:14px 0}
+.hero .stats b{font-size:17px;display:block;font-family:ui-monospace,Consolas,monospace}
+.hero .stats span{font-size:9px;opacity:.85}
+.hero .go{display:block;width:100%;border:none;border-radius:16px;padding:14px;font-size:14px;font-weight:900;letter-spacing:2px;color:#DC2626;background:#fff;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.25)}
+.streak{position:absolute;right:16px;top:16px;width:62px;height:62px;border-radius:50%;
+  background:conic-gradient(#fff calc(2/14*360deg),rgba(255,255,255,.25) 0);display:flex;align-items:center;justify-content:center}
+.streak::before{content:"";position:absolute;inset:5px;border-radius:50%;background:rgba(0,0,0,.22)}
+.streak div{position:relative;text-align:center;line-height:1.1;color:#fff}
+.streak b{font-size:16px}.streak span{display:block;font-size:9px;opacity:.85}
+.sugcard{margin:0 16px 14px;border-radius:var(--r-md);background:rgba(240,72,62,.1);border:1px solid rgba(240,72,62,.35);padding:12px 16px}
+.sugcard .cap{font-size:10px;color:var(--gold);font-weight:800;letter-spacing:1px;display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.sugcard .cap i{width:6px;height:6px;border-radius:50%;background:var(--acc1);box-shadow:0 0 8px var(--acc1)}
+.sug-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px dashed rgba(148,163,184,.2)}
+.sug-row .ex{font-size:13px;font-weight:700;width:110px}
+.sug-row .delta{font-size:11px;color:var(--sub);flex:1;line-height:1.5}
+.sug-row .delta b{color:var(--gold);font-family:ui-monospace,Consolas,monospace}
+.adopt{font-size:10px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);color:var(--sub);cursor:pointer;flex:none}
+.adopt.ok{color:var(--ok);border-color:var(--ok)}
+.exc{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);margin:0 16px 12px;overflow:hidden}
+.exc.done{border-color:rgba(34,197,94,.5);background:linear-gradient(160deg,rgba(34,197,94,.1),#16221b)}
+.exc .hd{display:flex;align-items:center;gap:12px;padding:16px 16px;cursor:pointer}
+.exc .idx{width:40px;height:40px;border-radius:16px;background:linear-gradient(140deg,#F97316,#FB7185);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:#fff;flex:none}
+.exc h4{font-size:15px;font-weight:800}
+.exc .rx{font-size:11px;color:var(--sub);margin-top:2px}
+.exc .rx b{color:var(--gold);font-family:ui-monospace,Consolas,monospace}
+.exc .pair{font-size:9px;padding:2px 7px;border-radius:8px;background:rgba(255,190,133,.14);color:var(--gold);border:1px solid rgba(255,190,133,.4);flex:none}
+.exc .more{margin-left:auto;color:var(--dim);font-size:14px;transition:transform .3s}
+.exc.open .more{transform:rotate(90deg)}
+.excbody{max-height:0;overflow:hidden;transition:max-height .45s ease}
+.exc.open .excbody{max-height:400px}
+.excbody .in{padding:0 16px 14px;border-top:1px dashed var(--line);padding-top:11px}
+.dots{display:flex;gap:7px;margin:8px 0 10px}
+.dots i{flex:1;height:34px;border-radius:12px;background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--dim);font-family:ui-monospace,Consolas,monospace}
+.dots i.hit{background:var(--grad);border:none;color:#fff;font-weight:800}
+.restcard{margin:0 16px 12px;border-radius:var(--r-md);background:radial-gradient(120% 140% at 20% 0%,rgba(242,106,21,.2),var(--card));border:1px solid rgba(242,106,21,.4);padding:14px;display:flex;align-items:center;gap:14px}
+.restcard .ring{position:relative;width:60px;height:60px;flex:none}
+.restcard .ring .in{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;font-family:ui-monospace,Consolas,monospace;color:var(--gold)}
+.restcard b{font-size:13px;display:block}.restcard span{font-size:10px;color:var(--sub)}
+.gobig{display:block;margin:2px 16px 10px;width:calc(100% - 32px);border:none;border-radius:16px;padding:16px;font-size:14px;font-weight:900;letter-spacing:2px;color:#fff;background:var(--grad);cursor:pointer;box-shadow:0 10px 24px rgba(240,72,62,.35)}
+.weekdata{display:flex;align-items:flex-end;gap:7px;height:56px;padding:0 4px}
+.weekdata i{flex:1;background:linear-gradient(to top,#4a2a17,var(--acc1));border-radius:4px 4px 0 0;opacity:.9}
+.weekdata i.today{background:linear-gradient(to top,#0d3b33,var(--ok))}
+.stat3{display:flex;gap:10px;margin:0 16px 14px}
+.stat3 .s{flex:1;background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px;text-align:center}
+.stat3 b{font-size:16px;display:block;font-family:ui-monospace,Consolas,monospace}
+.stat3 span{font-size:9px;color:var(--dim);letter-spacing:1px}
+.stat3 .up{color:#4ADE80;font-size:9px}.stat3 .dn{color:#FCA5A5;font-size:9px}
+/* ============ P2 动作列表 ============ */
+.searchbar{margin:52px 16px 10px;display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;color:var(--dim);font-size:13px;cursor:pointer}
+.frow{display:flex;gap:7px;overflow-x:auto;padding:2px 16px 8px;scrollbar-width:none;align-items:center}
+.frow::-webkit-scrollbar{display:none}
+.frow .fl{font-size:10px;color:var(--dim);flex:none;margin-right:2px}
+.exbig{margin:0 16px 12px;border-radius:var(--r-md);background:var(--card);border:1px solid var(--line);padding:16px;cursor:pointer}
+.exbig h4{font-size:16px;font-weight:800}
+.exbig h4 span{font-size:10px;color:var(--dim);font-weight:400}
+.exbig .meta{font-size:11px;color:var(--sub);margin:5px 0 10px}
+.exbig .tagrow{display:flex;gap:6px;flex-wrap:wrap}
+.count-note{font-size:10px;color:var(--dim);margin:0 18px 8px}
+/* ============ P3 详情整页 ============ */
+.dt-head{padding:54px 16px 14px;background:linear-gradient(180deg,#1e2b40,var(--bg))}
+.dt-head h2{font-size:22px;font-weight:900}
+.dt-head .en{font-size:11px;color:var(--sub);margin:4px 0 10px}
+.dt-tags{display:flex;gap:6px;flex-wrap:wrap}
+.dt-sec{margin:0 16px 12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:14px}
+.dt-sec h3{font-size:12px;font-weight:800;letter-spacing:2px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.dt-sec h3::before{content:"";width:3px;height:12px;background:var(--grad);border-radius:8px}
+.dt-sec ol{padding-left:20px}.dt-sec ol li{font-size:12px;line-height:1.85;color:#CBD5E1}
+.dt-sec ul{list-style:none}.dt-sec ul li{font-size:12px;line-height:1.85;color:#CBD5E1;padding-left:14px;position:relative}
+.dt-sec ul li::before{content:"";position:absolute;left:0;top:10px;width:5px;height:5px;border-radius:1px;background:var(--acc1)}
+.anat-tb{width:100%;border-collapse:collapse;font-size:11px}
+.anat-tb th{color:var(--sub);font-weight:600;text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);font-size:10px}
+.anat-tb td{padding:7px 6px;border-bottom:1px solid #26324a;color:#CBD5E1;line-height:1.55}
+.anat-tb td:first-child{color:var(--ink);font-weight:600;white-space:nowrap}
+.dt-danger{border-color:rgba(248,113,113,.4);background:linear-gradient(160deg,rgba(248,113,113,.08),#1a1416)}
+.dt-danger h3{color:var(--warn)}.dt-danger h3::before{background:var(--warn)}.dt-danger li{color:#e8b4b4}
+.dt-breath{background:linear-gradient(160deg,rgba(34,197,94,.08),#101614)}
+.rr{display:flex;gap:8px}
+.rr .cell{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center}
+.rr .cell b{display:block;font-size:14px;color:var(--gold);font-family:ui-monospace,Consolas,monospace}
+.rr .cell span{font-size:9px;color:var(--dim)}
+.linkrow{display:flex;flex-wrap:wrap;gap:6px}
+.tier-switch{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;margin:52px 16px 0}
+.tier-switch button{flex:1;border:none;background:transparent;font-size:12px;padding:8px 0;border-radius:12px;color:var(--sub);cursor:pointer;font-weight:600}
+.tier-switch button.on{background:var(--grad);color:#fff;font-weight:800}
+/* ============ P4/P5 拉伸 ============ */
+.strow{display:flex;align-items:center;gap:12px;margin:0 16px 8px;padding:12px 16px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer}
+.strow .tg{font-size:10px;color:#4ADE80}
+.strow h4{font-size:13px;font-weight:700;margin:2px 0}
+.strow .meta{font-size:10px;color:var(--sub)}
+.strow .mth{margin-left:auto;font-size:9px;padding:3px 8px;border-radius:8px;background:rgba(34,197,94,.12);color:#4ADE80;flex:none}
+.stepcard{margin:0 16px 10px;border-radius:16px;background:var(--card);border:1px solid var(--line);padding:14px 16px;display:flex;gap:12px}
+.stepcard .n{flex:none;width:26px;height:26px;border-radius:12px;background:linear-gradient(140deg,#F97316,#FB7185);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+.stepcard p{font-size:13px;line-height:1.8;color:#CBD5E1}
+/* 真实书页图占位块（仅原型内部评审用，产品内不使用——PRD 7.4） */
+.imgblock{margin:0 16px 12px;border-radius:var(--r-md);overflow:hidden;background:var(--card);border:1px solid var(--line)}
+.imgblock img{width:100%;display:block}
+.imgblock .cap{font-size:9px;color:var(--dim);padding:7px 12px;line-height:1.6;background:var(--card2)}
+.imgblock .cap b{color:#c4b5fd}
+/* ============ P6 执行页 ============ */
+.run-top{position:sticky;top:0;z-index:30;background:rgba(15,23,42,.96);backdrop-filter:blur(6px);padding:54px 16px 10px;border-bottom:1px solid var(--card);display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--dim)}
+.run-ex{margin:10px 16px 12px;border-radius:var(--r-md);background:linear-gradient(160deg,rgba(242,106,21,.14),var(--card));border:1px solid rgba(242,106,21,.4);padding:16px}
+.run-ex .cat{font-size:9px;letter-spacing:2px;color:var(--acc1)}
+.run-ex h2{font-size:20px;font-weight:900;margin:4px 0 2px}
+.run-ex .en{font-size:10px;color:var(--sub)}
+.run-ex .ref{font-size:11px;color:#c9d2e2;line-height:1.7;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(242,106,21,.3)}
+.run-ex .ref b{color:var(--gold);font-family:ui-monospace,Consolas,monospace}
+.setrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px 12px;margin:0 16px 8px;min-height:56px}
+.setrow.warm{opacity:.62;border-style:dashed}
+.setrow.cur{border-color:var(--acc1);background:linear-gradient(160deg,rgba(242,106,21,.12),var(--card));box-shadow:0 0 0 1px rgba(242,106,21,.35)}
+.setrow .sn{font-size:11px;color:var(--dim);width:44px;flex:none;font-weight:700}
+.setrow .sn .t{display:block;font-size:10px;color:var(--gold);font-weight:600}
+.setrow input{width:56px;border:1px solid var(--line);border-radius:10px;padding:9px 2px;font-size:16px;font-weight:700;text-align:center;color:var(--ink);font-family:ui-monospace,Consolas,monospace;background:var(--card2);flex:none}
+.setrow .u{font-size:10px;color:var(--dim);flex:none}
+.repbtns{display:flex;gap:3px;margin-left:auto}
+.repbtns .rp{width:20px;height:24px;border-radius:8px;border:1px solid var(--line);color:#94a8c4;font-size:10px;background:var(--card2);cursor:pointer}
+.repbtns .rp.hit{background:var(--grad);border:none;color:#fff;font-weight:800}
+.failbtn{font-size:9px;padding:3px 6px;border-radius:8px;border:1px solid var(--line);color:var(--dim);cursor:pointer;flex:none}
+.failbtn.on{color:var(--warn);border-color:var(--warn);background:rgba(248,113,113,.1)}
+.rowmenu{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--sub);font-size:16px;font-weight:900;cursor:pointer;flex:none;line-height:1}
+.setdone{width:44px;height:44px;border-radius:50%;border:2px solid #3B4A66;background:transparent;color:#8fa0b8;font-size:18px;font-weight:900;cursor:pointer;flex:none;margin-left:auto}
+.setrow .setdone{margin-left:0}
+.setctl{display:flex;gap:8px;margin:2px 16px 10px}
+.setctl button{flex:1;border:1px dashed var(--line);background:transparent;color:var(--sub);border-radius:12px;padding:8px;font-size:11px;cursor:pointer}
+.bigrest{margin:4px 16px 12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:14px;text-align:center}
+.bigrest .lab{font-size:10px;color:var(--sub);margin-bottom:4px;display:flex;justify-content:center;gap:14px}
+.bignum{font-size:46px;font-weight:900;font-family:ui-monospace,Consolas,monospace;background:linear-gradient(180deg,#FDBA74,#F97316);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.1}
+.superjump{margin:0 16px 12px;display:flex;align-items:center;gap:10px;background:rgba(255,190,133,.08);border:1px solid rgba(255,190,133,.4);border-radius:16px;padding:12px 14px;font-size:12px;color:var(--gold);cursor:pointer}
+.superjump b{color:var(--gold)}
+.thumbbar{display:flex;gap:10px;padding:2px 16px 8px}
+.thumbbar button{border:none;border-radius:16px;padding:14px 0;font-size:14px;font-weight:800;cursor:pointer}
+.thumbbar .ghost{flex:1;background:var(--card);color:var(--sub);border:1px solid var(--line)}
+.thumbbar .main{flex:2;background:var(--grad);color:#fff;box-shadow:0 10px 24px rgba(240,72,62,.4);letter-spacing:2px}
+/* 半屏速览 sheet（执行中） */
+.backdrop{position:absolute;inset:0;background:rgba(2,6,23,.72);backdrop-filter:blur(2px);z-index:52}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:46%;background:var(--card);border-radius:28px 28px 0 0;z-index:53;display:flex;flex-direction:column;transition:height .45s cubic-bezier(.22,.9,.36,1);border-top:1px solid #475569;box-shadow:0 -20px 60px rgba(0,0,0,.5)}
+.sheet.full{height:88%}
+.sheet .grip{width:40px;height:4px;border-radius:8px;background:#475569;margin:10px auto 2px;flex:none}
+.sheet .sh-h{padding:6px 20px 12px;display:flex;align-items:center;gap:10px;flex:none}
+.sheet .sh-h h3{font-size:16px;font-weight:900;flex:1}
+.sheet .sh-x{border:1px solid #475569;color:var(--gold);border-radius:99px;background:transparent;font-size:11px;padding:5px 12px;cursor:pointer;flex:none}
+.sheet .sh-b{flex:1;overflow-y:auto;padding:0 20px 30px;scrollbar-width:none}
+.sheet .sh-b::-webkit-scrollbar{display:none}
+.sheet .sec{margin-bottom:14px}
+.sheet .sec b.cap{display:block;font-size:10px;letter-spacing:2px;color:#FB923C;font-weight:700;margin-bottom:6px}
+.sheet .sec p{font-size:13px;line-height:1.85;color:#CBD5E1}
+/* ============ P7/P8 计划 ============ */
+.pl{margin:0 16px 10px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--card);padding:14px 16px;cursor:pointer;position:relative;overflow:hidden}
+.pl.act{border-color:rgba(242,106,21,.5);background:linear-gradient(160deg,rgba(242,106,21,.14),var(--card))}
+.pl::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--grad)}
+.pl h4{font-size:14px;font-weight:800}
+.pl .meta{font-size:10px;color:var(--sub);margin:4px 0 8px}
+.phasebar{display:flex;gap:4px}
+.phasebar i{flex:1;height:5px;border-radius:8px;background:#26324a}
+.phasebar i.on{background:var(--grad)}
+.phaseline{margin:0 16px 10px;border-radius:var(--r-md);background:var(--card);border:1px solid var(--line);padding:16px;position:relative;overflow:hidden}
+.phaseline::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--grad)}
+.phaseline h4{font-size:14px;font-weight:800}
+.phaseline .meta{font-size:11px;color:var(--sub);margin-top:4px;line-height:1.7}
+.phaseline .pct{position:absolute;right:14px;top:13px;font-size:11px;color:var(--gold);font-family:ui-monospace,Consolas,monospace}
+.rulecard{margin:0 16px 12px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.35);border-radius:16px;padding:12px 16px;font-size:12px;line-height:1.9;color:#d2f5e3}
+.editdemo{margin:0 16px 12px;display:flex;align-items:center;gap:10px;background:rgba(139,92,246,.1);border:1px dashed rgba(139,92,246,.45);border-radius:16px;padding:12px 14px;font-size:11px;color:#ddd6fe}
+/* ============ P9 历史 ============ */
+.period-sw{display:flex;gap:6px;margin:8px 16px 14px;background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:5px}
+.period-sw button{flex:1;border:none;border-radius:16px;padding:10px 0;font-size:13px;font-weight:800;background:transparent;color:var(--dim);cursor:pointer;letter-spacing:2px}
+.period-sw button.on{background:var(--grad);color:#fff;box-shadow:0 6px 16px rgba(240,72,62,.4)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:0 18px 6px}
+.cal .wd{font-size:9px;color:var(--dim);text-align:center;padding:3px 0}
+.cal .d{aspect-ratio:1;border-radius:12px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:var(--dim);cursor:pointer;position:relative}
+.cal .d em{font-style:normal;font-family:ui-monospace,Consolas,monospace;font-size:9px;color:#0d1524;font-weight:800;margin-top:1px}
+.cal .d.mk{background:var(--grad);border:none;color:#fff}
+.cal .d.today{outline:2px solid var(--gold);outline-offset:1px}
+.cal .d.empty{background:transparent;border:none}
+.cal-legend{display:flex;gap:12px;margin:0 18px 12px;font-size:9px;color:var(--dim);align-items:center}
+.cal-legend i{width:10px;height:10px;border-radius:8px;display:inline-block;margin-right:3px;vertical-align:-1px}
+.trendbars{display:flex;align-items:flex-end;gap:6px;height:72px;padding:0 2px}
+.trendbars i{flex:1;background:linear-gradient(to top,#4a2a17,var(--acc1));border-radius:4px 4px 0 0;position:relative}
+.trendbars i em{position:absolute;top:-14px;left:0;right:0;text-align:center;font-style:normal;font-size:9px;color:var(--dim)}
+.report{margin:0 16px 12px;border-radius:var(--r-md);background:linear-gradient(150deg,rgba(242,106,21,.16),var(--card));border:1px solid rgba(242,106,21,.4);padding:16px}
+.report h4{font-size:14px;font-weight:900;display:flex;align-items:center;gap:8px}
+.report .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.report .g{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px}
+.report .g b{font-size:15px;font-family:ui-monospace,Consolas,monospace;display:block}
+.report .g span{font-size:9px;color:var(--dim)}
+.report .cmp{font-size:9px;font-weight:700}
+.report .cmp.up{color:#4ADE80}.report .cmp.dn{color:#FCA5A5}
+.prline{display:flex;align-items:center;gap:8px;font-size:11px;color:#CBD5E1;padding:6px 0;border-top:1px dashed rgba(148,163,184,.2)}
+.prline:first-of-type{border-top:none}
+.prline .medal{font-size:12px}
+/* ============ P10 动作趋势 ============ */
+.chart{margin:0 16px 12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:14px}
+.chart svg{width:100%;display:block}
+.prmark{margin:0 16px 8px;display:flex;gap:8px;flex-wrap:wrap}
+/* ============ P11 我的 ============ */
+.merow{display:flex;align-items:center;gap:12px;margin:0 16px 9px;padding:12px 16px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer}
+.merow .ic{width:34px;height:34px;border-radius:12px;background:linear-gradient(140deg,#F97316,#FB7185);display:flex;align-items:center;justify-content:center;font-size:15px;flex:none}
+.merow h5{font-size:13px;font-weight:700}
+.merow .meta{font-size:10px;color:var(--sub);margin-top:2px}
+.merow .arr{margin-left:auto;color:var(--dim)}
+.merow.soon{opacity:.45}
+.calc{margin:0 16px 12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:16px}
+.calc input{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px;font-size:14px;text-align:center;color:var(--ink);background:var(--card2);font-family:ui-monospace,Consolas,monospace}
+.calc .out{margin-top:10px;text-align:center;font-size:20px;font-weight:900;font-family:ui-monospace,Consolas,monospace;color:var(--gold)}
+.plates{display:flex;justify-content:center;gap:5px;margin-top:10px;flex-wrap:wrap}
+.plates i{width:34px;height:34px;border-radius:50%;border:3px solid;display:flex;align-items:center;justify-content:center;font-size:9px;font-style:normal;font-weight:800;color:#fff}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="phone">
+    <div class="screen" id="screen">
+      <div class="debug-badge" id="dbg">final-1 · 第1/11页 · 训练</div>
+      <div class="page-scroll" id="pageScroll"></div>
+      <div id="vnav"></div>
+    </div>
+  </div>
+  <div class="stage-note">
+    肌录 · final-1 原型<br>C 卡片流视觉 × A 功能完备<br>底部 5 Tab · 共 11 页<br>
+    URL：?page=1..11 可刷新分享<br>斜体灰字=演示态说明
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   数据层（真实数据内嵌，来源见文件头注释；标注「演示态」的除外）
+================================================================ */
+const LIB={total:1335,detailed:270,
+  parts:[{n:'胸部',c:163},{n:'背部',c:203},{n:'肩部',c:143},{n:'上臂',c:292},{n:'前臂',c:37},{n:'腰腹',c:171},{n:'大腿',c:231},{n:'小腿',c:59},{n:'有氧',c:29},{n:'颈部',c:2}],
+  equip:[['自重',328],['哑铃',294],['绳索',168],['杠铃',161],['固定器械',81],['弹力带',61],['史密斯机',48],['壶铃',41]]};
+const EXLIST=[
+  {id:'EX_1436',n:'高杆位杠铃深蹲',e:'barbell high bar squat',c:'大腿',q:'杠铃',t:'臀大肌',d:'高级',ty:'复合动作',full:1},
+  {id:'EX_0025',n:'杠铃卧推',e:'barbell bench press',c:'胸部',q:'杠铃',t:'胸大肌',d:'中级',ty:'复合动作',full:1},
+  {id:'EX_0027',n:'杠铃俯身划船',e:'barbell bent over row',c:'背部',q:'杠铃',t:'上背部肌群',d:'中级',ty:'复合动作',full:1},
+  {id:'EX_0017',n:'辅助引体向上',e:'assisted pull-up',c:'背部',q:'固定器械',t:'背阔肌',d:'入门',ty:'复合动作',full:1},
+  {id:'EX_0047',n:'上斜杠铃卧推',e:'barbell incline bench press',c:'胸部',q:'杠铃',t:'胸大肌',d:'中级',ty:'复合动作',full:1},
+  {id:'EX_0031',n:'杠铃弯举',e:'barbell curl',c:'上臂',q:'杠铃',t:'肱二头肌',d:'入门',ty:'孤立动作',full:1},
+  {id:'EX_0997',n:'弹力带肩上推举',e:'band shoulder press',c:'肩部',q:'弹力带',t:'三角肌',d:'入门',ty:'复合动作',full:1},
+  {id:'ss_001',n:'杠铃借力推举',e:'barbell push press',c:'肩部',q:'杠铃',t:'三角肌',d:'高级',ty:'复合动作',full:1},
+  {id:'EX_0015',n:'窄距辅助引体向上',e:'assisted parallel close grip pull-up',c:'背部',q:'固定器械',t:'背阔肌',d:'',ty:'',full:0},
+  {id:'EX_2364',n:'宽距辅助双杠臂屈伸跪姿',e:'assisted wide-grip chest dip (kneeling)',c:'胸部',q:'固定器械',t:'胸大肌',d:'',ty:'',full:0}
+];
+const EX25={id:'EX_0025',n:'杠铃卧推',e:'barbell bench press',c:'胸部',q:'杠铃',
+  t:['胸大肌'],s:['肱三头肌','三角肌'],d:'中级',ty:'复合动作',
+  steps:[
+    '1. 仰卧于平板卧推凳上，双眼位于杠铃杆正下方，双脚平踏地面，屈膝约90度，挺胸并将肩胛骨向中间收紧、向下沉，贴稳凳面。',
+    '2. 双手正握闭握（拇指环绕杠铃），握距约为肩宽1.4-1.6倍，使前臂在最低点垂直于地面，出杠前先做一次深呼吸收紧核心。',
+    '3. 伸直手臂将杠铃推离挂钩，将杠铃移至肩关节正上方，双臂与地面垂直，此为起始位。',
+    '4. 控制2-3秒，屈肘沿浅弧线将杠铃下放至中下胸（胸骨下缘附近），杠铃轻触胸口即止，大臂与躯干约呈45-70度夹角。',
+    '5. 全脚掌蹬地建立下肢张力，以胸肌发力沿原轨迹将杠铃推起至起点上方，肘关节伸直但不锁死，顶端短停顿挤压胸肌1秒。',
+    '6. 重复完成规定次数后，将杠铃移回面部上方，确认挂钩位置后屈肘将杠铃稳稳放回架子。'],
+  key_points:[
+    '全程保持肩胛骨后缩下沉贴凳，不要随杠铃起伏而耸肩或前伸，以保证胸大肌为主要发力肌并保护肩关节。',
+    '下放触点固定在中下胸，杠铃轨迹呈浅弧线（下放至胸、推起至肩上），而非直上直下。',
+    '手腕保持中立位、拳眼朝上，前臂在最低点与地面垂直，避免手腕后翻。',
+    '双脚蹬地腿驱动配合腹压，臀部、上背、头三点接触凳面，腰部仅保留自然生理弯曲。'],
+  common_errors:[
+    '肩胛骨松弛上提前移，杠铃推起时肩膀离开凳面，胸肌刺激减弱且肩关节前侧受力骤增，长期易诱发肩峰下撞击。',
+    '用胸口反弹杠铃借力推起，胸肌张力时间缩短，肌腱受力瞬间陡增，易造成胸大肌或肱二头肌长头腱损伤。',
+    '手腕后翻用手掌根托杠，腕关节过度伸展承重，导致腕部疼痛。',
+    '过度起桥、臀部抬离凳面把平板推成斜上推，腰部代偿受力，目标角度改变且下腰背易受伤。'],
+  contraindications:[
+    '肩袖撕裂或肩峰下撞击综合征急性期患者',
+    '肩关节不稳、盂唇(SLAP)损伤未康复者',
+    '肘关节尺侧副韧带损伤或肱骨内上髁炎急性期',
+    '腰椎间盘突出急性期（无法维持仰卧刚性体位）',
+    '孕中晚期女性（避免仰卧位加压腔静脉）'],
+  breathing:'下放杠铃时深吸气并憋气收紧核心，推起时呼气；仅冲击极限重量的最后1-2次可采用瓦尔萨瓦憋气，高血压与心血管疾病者禁用。',
+  rep_range:{'增肌':'8-12次','最大力量':'1-6次','肌肉耐力':'15-20次'},
+  progressions:['上斜杠铃卧推','下斜杠铃卧推','仰卧单臂哑铃卧推'],
+  regressions:['史密斯机卧推','哑铃卧推','弹力带卧推'],
+  substitutes:['器械卧推','坐姿绳索推胸','俯卧撑','双杠臂屈伸'],
+  fms_related:['翼状肩','塌腰']};
+const EX15={id:'EX_0015',n:'窄距辅助引体向上',e:'assisted parallel close grip pull-up',c:'背部',q:'固定器械',t:['背阔肌'],s:['肱二头肌','前臂肌群'],d:'',ty:'',full:0};
+const EX1436={id:'EX_1436',n:'高杆位杠铃深蹲',e:'barbell high bar squat',c:'大腿',q:'杠铃',t:'臀大肌',d:'高级',
+  kp:'膝盖全程与脚尖方向一致，严禁膝内扣；下蹲深度以能维持骨盆中立为限；杠铃重心线始终压在脚背中点上方。',
+  breathing:'站位深吸气绷紧核心建立腹内压→屏气完成下蹲与站起（瓦式呼吸）→站直后再呼气换气'};
+const SS25={id:'EX_0025',pair:true}; /* 超级组配对演示：卧推×划船 */
+const STRETCH=[
+  {id:'ST_006',n:'胸大肌拉伸(门框法)',tg:['胸大肌'],sec:'胸大肌(上部)',m:'PNF',dur:'5-10秒×3-6次',scene:['训练后','日常','康复'],pain:['肩部疼痛','上背部疼痛'],w:3,
+   steps:['右手和右前臂抵门框站立, 手肘略高于肩部, 收紧腹部防止弓腰, 右脚向前迈一步','慢慢弯曲右腿, 身体向前下方倾斜','胸肌有轻微刺痛感时停止, 保持5-10秒','放松5-10秒','右手肘靠压门框产生抗阻力5-10秒, 放松后再次弯曲前腿进一步拉伸'],
+   warnings:['手肘位置不要过低','必须收紧腹部防止弓腰','肩关节活动量过大时将手臂抬高'],
+   pnf:'拉伸至轻微刺痛终止点保持5-10秒 → 放松5-10秒 → 不动肌肉前提下抗阻力收缩5-10秒 → 放松 → 进一步拉伸至新终止点; 重复3-6次',
+   note:'训练后使用剂量: 每侧2-3组 x 每组10-15秒',src:'拉伸整理§四.2; 精准拉伸整理§二'},
+  {id:'ST_012',n:'背阔肌拉伸(站姿)',tg:['背阔肌'],sec:'',m:'PNF',dur:'5-10秒×3-6次',scene:['训练后','日常'],pain:['肩部疼痛'],w:3,
+   steps:['站立于与肚脐同高的门把手前约一臂距离, 右手抓住门把手, 向侧面迈一步','上半身向前倾与手臂在同一平行线上, 右腿向左后方伸展呈V形','左手放门或墙上, 将身体推离墙面增加弓形弯曲5-10秒','放松5-10秒','右手臂向侧面移动产生抗阻力5-10秒, 继续增加弯曲度进一步拉伸'],
+   warnings:['离门距离要合适','推墙手臂弯曲度要足够','肩关节打开伸直'],
+   pnf:'拉伸至轻微刺痛终止点保持5-10秒 → 放松 → 抗阻力收缩 → 放松 → 进一步拉伸; 重复3-6次',note:'训练后使用剂量: 每侧2-3组 x 每组10-15秒',src:'拉伸整理§四.3'},
+  {id:'ST_020',n:'肱三头肌拉伸',tg:['肱三头肌'],sec:'',m:'PNF',dur:'5-10秒×3-6次',scene:['训练后','日常'],pain:[],w:3,
+   steps:['身体右侧靠墙站立, 抬起右手臂举过头顶, 全身只有肩胛骨接触墙面','尽可能弯曲右手臂, 左手抓住右手肘','小心在脑后拉动右手肘拉伸5-10秒, 至上臂后侧轻微刺痛','放松5-10秒','继续在脑后拉动进一步拉伸'],
+   warnings:['拉伸时胸部、背部或肩部不要收紧','肩胛骨不要使劲抵墙','手肘弯曲度要足够'],
+   pnf:'同上（收缩-放松循环 3-6 次）',note:'训练后使用剂量: 每侧2-3组 x 每组10-15秒',src:'拉伸整理§四.5'},
+  {id:'ST_024',n:'臀大肌拉伸',tg:['臀大肌'],sec:'',m:'PNF',dur:'5-10秒×3-6次',scene:['训练后','日常','康复'],pain:['髋部疼痛'],w:3,
+   steps:['站立于稳固椅子前, 右脚踩在椅子上, 尽量保持背部挺直、腹部收紧','弯曲左腿下压拉伸5-10秒, 至整个右臀部出现拉伸感','放松5-10秒','前腿往下踩压5-10秒产生抗阻力','继续弯曲左腿进一步拉伸'],
+   warnings:['前腿放置位置不要过低','背部要挺直','拉伸中膝盖不要向外扭转'],
+   pnf:'同上（收缩-放松循环 3-6 次）',note:'训练后使用剂量: 每侧2-3组 x 每组10-15秒',src:'拉伸整理§四.6'},
+  {id:'ST_030',n:'髂腰肌(髋部屈肌)拉伸',tg:['髂腰肌'],sec:'髋屈肌群',m:'PNF',dur:'5-10秒×3-6次',scene:['训练后','日常','康复'],pain:['背部疼痛','髋部疼痛'],w:3,
+   steps:['背躺在稳固桌子/长凳上, 双手朝胸腔方向拉起双腿, 腰背部紧贴平面','双手抓住左膝, 小心伸直右腿直至右腿自然悬空','放松悬空腿拉伸5-10秒','放松5-10秒; 右腿朝天花板方向抬起产生抗阻力','继续放松悬空腿进一步拉伸'],
+   warnings:['腰背部必须紧贴桌面','腿部要抵住胸腔方向','身体躺在桌子对角线位置'],
+   pnf:'同上',note:'久坐人群首选',src:'拉伸整理§四.7'},
+  {id:'ST_031',n:'股直肌拉伸(卧姿)',tg:['股直肌'],sec:'股四头肌',m:'PNF',dur:'5-10秒×3-6次',scene:['训练后','康复'],pain:['背部疼痛','膝部疼痛(跑步膝)'],w:3,
+   steps:['趴在长凳上, 左脚踩地, 腰背部完全挺直; 绳子套住右脚','确保整个左脚踩在地板上','小心伸直手臂带动绳子拉小腿, 拉伸5-10秒至大腿前侧出现拉伸感','放松5-10秒','抓住绳子努力伸直右膝产生抗阻力, 继续进一步拉伸'],
+   warnings:['凳子高度要合适避免弓腰','左脚尽量向前放','绳子长度要足够'],
+   pnf:'同上',note:'训练后使用剂量: 每侧2-3组 x 每组10-15秒',src:'拉伸整理§四.7'},
+  {id:'ST_034',n:'股后肌群拉伸(坐姿)',tg:['腘绳肌'],sec:'',m:'PNF',dur:'5-10秒×3-6次',scene:['训练后','训练前','日常'],pain:[],w:4,
+   steps:['坐在凳子或平面上, 整条右腿放在平面上; 左脚尽可能向后伸','上半身挺直坐立, 收紧腹部, 主动向前弓腰','上半身慢慢向前、向下移动, 至大腿后侧出现轻微刺痛感','放松5-10秒','右腿小心下压凳子产生抗阻力, 上半身继续向前向下进一步拉伸'],
+   warnings:['向前向下时弯曲臀部而不是背部','前倾时膝盖不要不断弯曲','禁止以站姿体前屈拉伸大腿后侧'],
+   pnf:'拉伸至轻微刺痛终止点保持5-10秒 → 放松 → 抗阻力收缩 → 放松 → 进一步拉伸; 重复3-6次',
+   note:'精准拉伸整理§五亦将其列入训练前热身',src:'拉伸整理§四.7'},
+  {id:'ST_036',n:'腓肠肌拉伸',tg:['腓肠肌'],sec:'小腿三头肌',m:'PNF',dur:'5-10秒×3-6次',scene:['训练后','日常','康复'],pain:['踝部疼痛'],w:3,
+   steps:['右脚脚掌踩在台阶等牢固物体边缘, 足弓和脚后跟悬空','放松小腿让脚后跟顺势落下进行拉伸, 放松5-10秒','腓肠肌发力上提身体2.5-5厘米产生抗阻力','放松5-10秒','脚后跟继续向下落至肌肉再次出现轻微刺痛感'],
+   warnings:['腿部要完全伸直','脚踩在平面边缘的部分不能过短','做这一动作务必穿鞋'],
+   pnf:'同上',note:'中老年推荐扶墙版',src:'拉伸整理§四.7'}];
+const stById=id=>STRETCH.find(s=>s.id===id);
+/* T3 13 套（period_templates.json 真实清单） */
+const PLANS=[
+  {id:'PT_001',n:'新手线性周期·全身3练（12周）',per:'线性',wk:12,goal:'增肌',lv:'初学者',dpw:3,ph:['解剖适应期','肥大期','力量期','减载/测试'],cur:true},
+  {id:'PT_002',n:'中阶上下分化·波浪周期（12周）',per:'波浪',wk:12,goal:'增肌',lv:'中级',dpw:4,ph:['积累期','强化期','峰值期','减载']},
+  {id:'PT_003',n:'推拉腿三分化·板块周期（12周）',per:'板块',wk:12,goal:'增肌',lv:'高级',dpw:6,ph:['肥大板块','减负荷','力量板块','减负荷','转换']},
+  {id:'PT_004',n:'减脂期周期·力量保持+有氧（12周）',per:'线性',wk:12,goal:'减脂',lv:'中级',dpw:5,ph:['有氧适应','运动量提升','巩固','减载/体测']},
+  {id:'PT_005',n:'最大力量专项周期（12周）',per:'线性',wk:12,goal:'最大力量',lv:'高级',dpw:4,ph:['生理适应','MxS-Ⅰ','MxS-Ⅱ','减量测试']},
+  {id:'PT_006',n:'年度单周期骨架·准备/比赛/过渡（44周）',per:'线性',wk:44,goal:'健康维持',lv:'中级',dpw:5,ph:['一般准备','专项准备','比赛期','过渡期']},
+  {id:'PT_007',n:'初级线性进阶·全身A/B交替（Novice LP）',per:'线性',wk:24,goal:'最大力量',lv:'初学者',dpw:3,ph:['阶段1','阶段2','阶段3'],ppst:true},
+  {id:'PT_008',n:'高等初级微调·LP末期四招',per:'线性',wk:12,goal:'最大力量',lv:'初学者+',dpw:3,ph:['轻深蹲日','负重引体','退行组','练一休二'],ppst:true},
+  {id:'PT_009',n:'得州训练法·容量-恢复-强度（Texas Method）',per:'周周期',wk:20,goal:'最大力量',lv:'中级',dpw:3,ph:['容量日','恢复日','强度日'],ppst:true},
+  {id:'PT_010',n:'斯塔尔HLM·重-轻-中全身3练',per:'HLM',wk:12,goal:'增肌',lv:'中级',dpw:3,ph:['Heavy','Light','Medium'],ppst:true},
+  {id:'PT_011',n:'中级四天分割·上/下分化+俄式6组',per:'分割',wk:12,goal:'增肌',lv:'中级',dpw:4,ph:['上肢容量','下肢容量','上肢强度','下肢强度'],ppst:true},
+  {id:'PT_012',n:'高级金字塔·4周加载+4周峰值',per:'金字塔',wk:8,goal:'最大力量',lv:'高级',dpw:3,ph:['加载','减重','峰值'],ppst:true},
+  {id:'PT_013',n:'高级进二退一·4周模块周期',per:'模块',wk:20,goal:'最大力量',lv:'高级',dpw:4,ph:['模块1','模块2','模块3'],ppst:true}];
+const PT001={...PLANS[0],
+  phases:[
+    {name:'解剖适应期（AA）',weeks:'第1-3周',pct:'40%~65%',vol:'低-中：每练习2~3组×8~20次',goal:'动作模式学习+肌腱韧带适应'},
+    {name:'肥大期',weeks:'第4-7周',pct:'60%~80%',vol:'高：每练习2~4组×8~12次',goal:'增大肌肉横截面积',rest:'60-90秒'},
+    {name:'力量期（MxS-Ⅰ）',weeks:'第8-11周',pct:'70%~80%',vol:'中：每练习2~6组×2~6次',goal:'募集模式与肌肉间协调',rest:'120-180秒'},
+    {name:'减载/测试周',weeks:'第12周',pct:'60%~75%',vol:'低：训练量降50%以上',goal:'消除疲劳+超量补偿+1RM测试'}],
+  weekly:[
+    {day:1,focus:'全身A·蹲主导',pattern:'动态热身→复合蹲→水平复合推→水平复合拉→核心稳定',rx:'每动作2-3组×8-15次'},
+    {day:2,focus:'全身B·铰链主导',pattern:'动态热身→髋铰链→垂直复合推→垂直复合拉→抗伸展核心',rx:'每动作2-3组×8-15次'},
+    {day:3,focus:'全身C·单侧与均衡',pattern:'动态热身→单腿蹲变式→推/拉组合→负重行走/核心',rx:'每动作2-3组×8-15次'}],
+  deload:'台阶式3∶1——每3个增荷小周期接1个减荷小周期；减荷周训练量降50%以上、强度降5%~10%；第12周为固定减载/测试周（邦帕整理）',
+  notes:'阶段框架按ACSM整理落位到12周；每次课含热身5~10分钟、放松+拉伸10分钟。',
+  src:'邦帕整理§5.4/§7.2；ACSM整理§5.3'};
+const ATLAS={
+  胸大肌:{o:'锁骨内侧半、胸骨、第1-6肋软骨',i:'肱骨大结节嵴',f:'肩内收、屈曲、内旋'},
+  肱三头肌:{o:'盂下结节（长头）、肱骨后面',i:'尺骨鹰嘴',f:'肘伸展'},
+  三角肌:{o:'锁骨外1/3、肩峰、肩胛冈',i:'三角肌粗隆',f:'肩外展、前屈、后伸'},
+  背阔肌:{o:'T7-L5棘突、髂嵴、胸腰筋膜',i:'肱骨小结节嵴',f:'肩内收、后伸、内旋'},
+  股四头肌:{o:'髂前下棘、股骨粗线',i:'胫骨粗隆',f:'膝伸展、髋屈曲（股直肌）'},
+  上背部肌群:{o:'—',i:'—',f:'肩胛内收下沉（复合肌群）'}};
+/* 今日训练（演示态：含组类型演示——热身/正式/单侧/超级组/递减/失败标记） */
+const TODAY={plan:'PT_001 新手线性周期',week:5,phase:2,focus:'全身A·蹲主导',
+  items:[
+    {ex:EXLIST[0],w:'47.5kg',sets:5,reps:5,rest:180,done:2,side:false},
+    {ex:EXLIST[1],w:'35kg',sets:3,reps:8,rest:90,done:0,superWith:EXLIST[2]},
+    {ex:EXLIST[2],w:'40kg',sets:3,reps:8,rest:90,done:0,super:true},
+    {ex:{...EXLIST[5],n:'哑铃单臂划船',side:true},w:'12kg',sets:3,reps:10,rest:60,done:0,side:true}],
+  afterStretch:['ST_031','ST_034','ST_024','ST_030']};
+const LP=[
+  {ex:'高杆位杠铃深蹲',log:'上周 3 次课 5×5 @47.5kg 全部完成',rule:'全完成 → +2.5kg',from:'47.5kg',to:'50kg',ok:1},
+  {ex:'杠铃俯身划船',log:'连续 2 次末组未完成 @40kg×8（失败标记×2）',rule:'连续失败 → 减 10% 重置',from:'40kg',to:'36kg',ok:0}];
+/* 历史（演示态：6 周日容量 kg + 月度聚合 + 深蹲 e1RM 趋势） */
+const HIST={
+  month:[0,1180,0,1420,0,1350,1260, 0,1490,0,1520,1380,0,1610, 0,1550,1430,0,1680,0,1720,1590,0,1750, 0,1810,1660,0,1890,1740,0],
+  monthDays:30, trainDays:20, monthVol:'24,860', prevVol:'21,940', monthSessions:20, prevSessions:18,
+  monthRate:94, prevRate:88, adopted:11,
+  prs:[{d:'09-02',t:'深蹲 5×5 @50kg（首次破 50）'},{d:'08-21',t:'卧推 8×80kg（次数 PR）'},{d:'08-07',t:'划船 3×8 @40kg'}],
+  squat:[{w:'07-15',v:71},{w:'07-22',v:74},{w:'07-29',v:76},{w:'08-05',v:79},{w:'08-12',v:83},{w:'08-19',v:85},{w:'08-26',v:88},{w:'09-02',v:91},{w:'09-06',v:93}]};
+const PAGES=['训练首页','动作列表','动作详情','拉伸列表','拉伸详情','训练执行','计划列表','计划详情','历史全景','动作趋势','我的','AI 问答','模板详情'];
+const ST={page:1};
+let timerInt=null;
+const $=id=>document.getElementById(id);
+
+/* ================================================================
+   路由
+================================================================ */
+function parseURL(){const q=new URLSearchParams(location.search);const p=parseInt(q.get('page'),10);ST.page=(p>=1&&p<=13)?p:1;if(q.get('notes')==='1')document.body.classList.add('notes');}
+function syncURL(){history.replaceState(null,'',`?page=${ST.page}`);}
+function go(p){if(p>=1&&p<=13){ST.page=p;syncURL();render();}}
+function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}}
+function render(){
+  stopTimer();
+  document.querySelectorAll('[data-overlay]').forEach(n=>n.remove());
+  $('dbg').textContent=`final-2 · 第${ST.page}/13页 · ${PAGES[ST.page-1]}`;
+  const R={1:pHome,2:pExList,3:pExDetail,4:pStList,5:pStDetail,6:pRun,7:pPlanList,8:pPlanDetail,9:pHistory,10:pTrend,11:pMe,12:pAI,13:pTpl};
+  $('pageScroll').innerHTML=R[ST.page]();
+  $('vnav').innerHTML=navBar();
+  if(ST.page===6)runBind();
+  if(ST.page===1)homeBind();
+  if(ST.page===2)listBind();
+  if(ST.page===9)histBind();
+  if(ST.page===10)trendBind();
+  if(ST.page===11)meBind();
+  if(ST.page===12)aiBind();
+  if(ST.page===13)tplBind();
+  $('pageScroll').scrollTop=0;
+}
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]'); if(g){go(parseInt(g.dataset.go,10));return;}
+  const t=e.target.closest('[data-toggle]'); if(t){t.classList.toggle('open');return;}
+});
+/* ================================================================
+   底部 5 Tab
+================================================================ */
+const IC={
+  run:'<svg viewBox="0 0 24 24"><path d="M4 9v6M8 7v10M20 9v6M16 7v10"/><path d="M8 12h8"/></svg>',
+  lib:'<svg viewBox="0 0 24 24"><path d="M4 5h7v14H6a2 2 0 0 1-2-2V5zm16 0h-7v14h5a2 2 0 0 0 2-2V5z" stroke-linejoin="round"/><path d="M11 5v14"/></svg>',
+  str:'<svg viewBox="0 0 24 24"><path d="M12 4c3 2 3 5 0 8 3 3 3 6 0 8-3-2-3-5 0-8-3-3-3-6 0-8z"/></svg>',
+  his:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 2v4M16 2v4M4 10h16M9 14l2 2 4-4"/></svg>',
+  me:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c1.5-3.6 4-5 7-5s5.5 1.4 7 5"/></svg>'};
+function navBar(){
+  const m={1:'run',6:'run',12:'run',13:'run',2:'lib',3:'lib',4:'str',5:'str',9:'his',10:'his',11:'me',7:'me',8:'me'};
+  const cur=m[ST.page];
+  return `<div class="tabbar">
+    <div class="tb ${cur==='run'?'on':''}" data-go="1"><span class="ic-wrap">${IC.run}</span><div>训练</div></div>
+    <div class="tb ${cur==='lib'?'on':''}" data-go="2"><span class="ic-wrap">${IC.lib}</span><div>动作库</div></div>
+    <div class="tb ${cur==='str'?'on':''}" data-go="4"><span class="ic-wrap">${IC.str}</span><div>拉伸</div></div>
+    <div class="tb ${cur==='his'?'on':''}" data-go="9"><span class="ic-wrap">${IC.his}</span><div>历史</div></div>
+    <div class="tb ${cur==='me'?'on':''}" data-go="11"><span class="ic-wrap">${IC.me}</span><div>我的</div></div>
+  </div>`;
+}
+/* ================================================================
+   P1 训练首页（卡片流）
+================================================================ */
+function pHome(){
+  const t=TODAY;
+  const itemCard=(it,i,open)=>`
+  <div class="exc ${open?'open':''} ${it.done?'done':''}" ${open?'data-toggle':''}>
+    <div class="hd">
+      <div class="idx">${i+1}</div>
+      <div class="grow"><h4>${it.ex.n}</h4>
+      <div class="rx">${it.w} · 目标 ${it.sets}组×${it.reps}次 · 休息${it.rest}s${it.super?' · <span style="color:#c4b5fd">超级组配对</span>':''}${it.side?' · <span style="color:#c4b5fd">单侧 L/R</span>':''}</div></div>
+      <span class="more">›</span>
+    </div>
+    <div class="excbody"><div class="in">
+      <div class="dots">${Array.from({length:it.sets},(_,s)=>`<i class="${s<it.done?'hit':''}">${s<it.done?'✓':s+1}</i>`).join('')}</div>
+      <div style="font-size:11px;color:var(--sub);line-height:1.7;margin-bottom:10px">${i===0?EX1436.kp:''}</div>
+      <button class="btn btn-grad" style="width:100%" data-go="6">去执行页记组 · 重量/次数自由改 →</button>
+    </div></div>
+  </div>`;
+  return `
+  <div class="c-head">
+    <div class="hi">9月7日 · 周一 · 第${t.week}周/12 · 肥大期</div>
+    <h1>今天练全身 A · 蹲主导</h1>
+    <div class="sub">轻问卷回显：增肌 · 初学者 · 健身房 · 3练/周（可跳过，随时在「我的」重填）</div>
+  </div>
+  <div class="hero">
+    <div class="streak" style="background:conic-gradient(#fff calc(2/14*360deg),rgba(255,255,255,.25) 0)"><div><b class="mono">2/14</b><span>今日进度</span></div></div>
+    <span class="tag" data-go="8" style="cursor:pointer">PT_001 新手线性周期 · 肥大期 ›</span>
+    <h3>${t.focus}</h3>
+    <div class="sub2">4 动作 · 台阶式 3:1 加重 · 预计 55 分钟 · 第12周减载测试</div>
+    <div class="stats">
+      <div><b>4</b><span>动作</span></div><div><b>14</b><span>总组数</span></div>
+      <div><b>≈3,708<small>kg</small></b><span>预计总容量</span></div><div><b>2</b><span>已完成组</span></div>
+    </div>
+    <button class="go" data-go="6">继续训练（已完成 2/14 组）→</button>
+  </div>
+  <div class="card" data-go="12" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;background:linear-gradient(135deg,rgba(139,92,246,.14),rgba(14,165,233,.08));border-color:rgba(139,92,246,.4)">
+    <div class="exc idx" style="margin:0;width:36px;height:36px;border-radius:12px;font-size:15px;background:linear-gradient(140deg,#8B5CF6,#0EA5E9)">🤖</div>
+    <div class="grow"><b style="font-size:13px">问教练 · AI 问答</b>
+    <div style="font-size:10px;color:var(--sub);margin-top:2px">预设问答库离线内置（v1.7 首批）· 四层证据 · 拒答不编造 · 免费无限制</div></div>
+    <span style="color:#c4b5fd">›</span>
+  </div>
+  <div class="sec-cap">我的模板（v1.7 · 一键开练+智能预填 · PRD 5.6.6）</div>
+  <div style="display:flex;gap:10px;overflow-x:auto;padding:2px 14px 6px;scrollbar-width:none">
+    ${[{n:'练胸和三头',ex:'5 动作',tip:'卧推 47.5→50kg ✓预填加重',d:'3 天前'},{n:'练背和二头',ex:'5 动作',tip:'划船 -10% 重置提示（连败×2）',d:'上周五'},{n:'腿部爆炸日',ex:'6 动作',tip:'拉伸段已按今日肌群刷新',d:'9/28'}].map(t=>`
+    <div data-go="13" style="flex:none;width:170px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 12px;cursor:pointer">
+      <b style="font-size:13px">${t.n}</b>
+      <div style="font-size:10px;color:var(--dim);margin-top:2px">${t.ex} · 上次 ${t.d}</div>
+      <div style="font-size:10px;color:#4ADE80;margin-top:7px;line-height:1.6;background:rgba(34,197,94,.08);border-radius:8px;padding:5px 7px">${t.tip}</div>
+    </div>`).join('')}
+  </div>
+  <div class="src" style="margin:0 14px 4px">存模板：训练总结页「存为模板」/ 计划详情「提取该日」｜ 打开即跑加重引擎预填 + 拉伸段 T5 动态刷新 ｜ 数量不限（免费红线）</div>
+  <div class="sugcard">
+    <div class="cap"><i></i>规则引擎 · 加重建议（PPST 初级 LP）</div>
+    ${LP.map(s=>`
+    <div class="sug-row">
+      <div class="ex">${s.ex}</div>
+      <div class="delta">${s.log}<br><b>${s.from} → ${s.to}</b>&nbsp;${s.rule}</div>
+      <span class="adopt" data-adopt>采纳</span>
+    </div>`).join('')}
+    <div style="font-size:9px;color:#8a6a55;margin-top:6px">全完成 +2.5~5kg ｜ 连续失败 -10% 重置（失败标记自动触发，PRD 5.10.4）</div>
+  </div>
+  <div class="exc" style="border-color:rgba(34,197,94,.4)">
+    <div class="hd"><div class="idx" style="background:linear-gradient(140deg,#5B6B8C,#7C8BA1);font-size:13px">热</div>
+      <div class="grow"><h4>热身 · 动态热身 <span style="color:#4ADE80;font-size:11px;font-weight:700">✓ 已完成 8min</span></h4>
+      <div class="rx">踝/髋/胸椎打开 + 空杆渐进 —— 今日课表三段结构之首（完整热身库二批）</div></div>
+    </div>
+  </div>
+  ${itemCard(t.items[0],1,true)}
+  <div class="restcard" id="homeRest">
+    <div class="ring">
+      <svg width="60" height="60" viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="27" fill="none" stroke="#334155" stroke-width="5"/>
+        <circle id="hBar" cx="32" cy="32" r="27" fill="none" stroke="#F97316" stroke-width="5" stroke-linecap="round" stroke-dasharray="169.6" stroke-dashoffset="0" transform="rotate(-90 32 32)"/>
+      </svg>
+      <div class="in" id="hRestNum">180</div>
+    </div>
+    <div class="grow"><b>组间休息 · 第3组准备</b><span>增肌期默认 90-120s · 到时震动+提示音（PRD 5.10.3）</span></div>
+    <span class="chip" id="hSkip">跳过</span>
+  </div>
+  ${itemCard(t.items[1],2,false)}
+  ${itemCard(t.items[2],3,false)}
+  <div class="exc">
+    <div class="hd" data-go="4" style="cursor:pointer">
+      <div class="idx" style="background:linear-gradient(140deg,#5B6B8C,#7C8BA1)">拉</div>
+      <div class="grow"><h4>练后拉伸推荐 · 4 个动作</h4>
+      <div class="rx">按已练部位（大腿/臀/髋）生成 · 10-15 分钟 · T5 映射</div></div>
+      <span class="more">›</span>
+    </div>
+  </div>
+  <div class="sec-cap">本周数据（长周期 → 历史 Tab）</div>
+  <div class="card" style="padding:12px">
+    <div class="weekdata">
+      <i style="height:42%"></i><i style="height:58%"></i><i style="height:50%"></i>
+      <i style="height:74%"></i><i style="height:66%"></i><i class="today" style="height:88%"></i><i style="height:20%"></i>
+    </div>
+    <div class="row" style="justify-content:space-between;margin-top:8px;font-size:9px;color:var(--dim)">
+      <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span style="color:var(--ok)">今天</span><span>日</span>
+    </div>
+  </div>
+  <div class="stat3">
+    <div class="s"><b>4,850</b><span>本周容量kg</span><div class="up">▲ 8% 环比</div></div>
+    <div class="s"><b>11</b><span>训练次数</span><div class="up">▲ 1</div></div>
+    <div class="s"><b>96%</b><span>计划完成率</span><div class="up">▲ 3%</div></div>
+  </div>
+  <div class="src">数据仅存本机 · 可导出 JSON/CSV ｜ 容量=组×重×次（训记验证的核心指标）</div>`;
+}
+function homeBind(){
+  const total=180;let left=total,run=false;
+  const bar=$('hBar'),num=$('hRestNum');
+  const draw=()=>{num.textContent=left;bar.style.strokeDashoffset=(169.6*(1-left/total)).toFixed(1);};
+  $('hSkip').onclick=e=>{e.stopPropagation();stopTimer();run=false;left=total;draw();};
+  document.querySelectorAll('[data-adopt]').forEach(el=>{
+    el.onclick=e=>{e.stopPropagation();el.classList.toggle('ok');el.textContent=el.classList.contains('ok')?'已采纳 ✓':'采纳';};});
+}
+/* ================================================================
+   P2 动作列表（多级筛选 + 搜索）
+================================================================ */
+let fPart='全部',fEq='全部',fDiff='全部',fTier='全部';
+function pExList(){
+  return `
+  <div class="searchbar" data-go="2">🔍 搜索动作 / 英文 / 别名（1335 条全库，如「卧推」「squat」）</div>
+  <div class="frow"><span class="fl">部位</span>
+    ${['全部','胸部','背部','大腿','肩部','上臂'].map(c=>`<span class="chip ${fPart===c?'on':''}" data-fk="fPart" data-fv="${c}">${c}</span>`).join('')}
+  </div>
+  <div class="frow"><span class="fl">器械</span>
+    ${['全部','杠铃','哑铃','固定器械','弹力带'].map(c=>`<span class="chip ${fEq===c?'on':''}" data-fk="fEq" data-fv="${c}">${c}</span>`).join('')}
+  </div>
+  <div class="frow"><span class="fl">难度</span>
+    ${['全部','入门','中级','高级'].map(c=>`<span class="chip ${fDiff===c?'on':''}" data-fk="fDiff" data-fv="${c}">${c}</span>`).join('')}
+    <span class="fl" style="margin-left:8px">详解</span>
+    ${['全部','仅详解','骨架版'].map(c=>`<span class="chip ${fTier===c?'on':''}" data-fk="fTier" data-fv="${c}">${c}</span>`).join('')}
+  </div>
+  <div class="count-note" id="exCount"></div>
+  <div id="exListBody">${exRows()}</div>
+  <div style="height:8px"></div>`;
+}
+function exRows(){
+  let list=EXLIST.filter(x=>
+    (fPart==='全部'||x.c===fPart)&&(fEq==='全部'||x.q===fEq)&&
+    (fDiff==='全部'||x.d===fDiff)&&(fTier==='全部'||(fTier==='仅详解'?x.full===1:x.full===0)));
+  const c=$('exCount');if(c)c.textContent=`${list.length}/10 条演示样例 · 全库 1335（详解 270）｜一级筛选：部位/器械/目标肌群，二级难度/类型仅详解动作（PRD 5.1.1）`;
+  if(!list.length)return `<div class="src" style="text-align:center;padding:22px 0">该筛选组合下演示样例 0 条（全库非空，如 大腿 231 条）</div>`;
+  return list.map(x=>`
+  <div class="exbig" data-go="3">
+    <h4>${x.n} <span>${x.e}</span></h4>
+    <div class="meta">${x.c} · ${x.q} · 目标：${x.t}${x.ty?` · ${x.ty}`:''}</div>
+    <div class="tagrow">
+      ${x.d?`<span class="badge hl">${x.d}</span>`:'<span class="badge plain">难度待补</span>'}
+      <span class="badge ${x.full?'hl':'plain'}">${x.full?'详解版':'骨架·完善中'}</span>
+      <span class="badge plain mono">${x.id}</span>
+    </div>
+  </div>`).join('');
+}
+function listBind(){
+  document.querySelectorAll('[data-fk]').forEach(ch=>{
+    ch.onclick=()=>{
+      const k=ch.dataset.fk;window[k]=ch.dataset.fv;
+      ch.parentElement.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===ch));
+      $('exListBody').innerHTML=exRows();
+    };});
+}
+/* ================================================================
+   P3 动作详情（整页 · 两档渲染）
+================================================================ */
+let dtTier='full';
+function pExDetail(){
+  const isFull=dtTier==='full';const x=isFull?EX25:EX15;
+  const atlas=[...x.t,...x.s].filter(m=>ATLAS[m]);
+  return `
+  <div class="tier-switch">
+    <button class="${isFull?'on':''}" data-tier="full">详解版 · 杠铃卧推</button>
+    <button class="${!isFull?'on':''}" data-tier="skel">骨架版 · 窄距辅助引体</button>
+  </div>
+  <div class="dt-head">
+    <h2>${x.n}</h2>
+    <div class="en">${x.e} · ${x.id}</div>
+    <div class="dt-tags">
+      <span class="badge hl">${x.c}</span><span class="badge plain">${x.q}</span>
+      <span class="badge plain">${x.t.join('、')}主导</span>
+      ${x.d?`<span class="badge plain">${x.ty} · ${x.d}</span>`:''}
+      <span class="badge ${isFull?'hl':'plain'}">${isFull?'详解版':'骨架·完善中'}</span>
+    </div>
+  </div>
+  ${isFull?`
+  <div class="imgblock">
+    <div style="height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--card2);border-bottom:1px dashed var(--line)"><div style="font-size:26px;line-height:1">🔒</div><div style="font-size:11px;color:var(--dim);padding:0 20px;text-align:center;line-height:1.7"><b style="color:#c4b5fd">《肌肉力量训练彩色图谱》杠铃卧推图版</b><br>真书图仅本地评审版展示 · 公开网页版已按 PRD 7.4 热替换为本占位块</div></div>
+    <div class="cap"><b>演示图 · 自用版直挂书图</b>（v1.7 · PRD 7.4 修订）：《肌肉力量训练彩色图谱》杠铃卧推图版——小范围自用阶段直接挂内部书图（资源键 <span class="mono">asset://exercise/EX_0025/atlas</span>）；商业化/公开发布时清单热切换为合规资产（RepDB/Blender），代码零改动</div>
+  </div>
+  <div class="sec-cap">动作要点</div>
+  <div class="dt-sec"><ul>${x.key_points.map(k=>`<li>${k}</li>`).join('')}</ul></div>
+  <div class="sec-cap">分步说明（6 步）</div>
+  <div class="dt-sec"><ol>${x.steps.map(s=>`<li>${s}</li>`).join('')}</ol></div>
+  <div class="sec-cap">肌群与解剖</div>
+  <div class="dt-sec">
+    <table class="anat-tb">
+      <tr><th>角色</th><th>肌肉</th></tr>
+      <tr><td>原动肌</td><td>${x.t.join('、')}</td></tr>
+      <tr><td>协同肌</td><td>${x.s.join('、')}</td></tr>
+      <tr><td>拮抗肌</td><td>背阔肌（肌动学功能对程序生成）</td></tr>
+      <tr><td>固定肌</td><td>肩袖肌群、核心</td></tr>
+    </table>
+    <div style="height:10px"></div>
+    <table class="anat-tb">
+      <tr><th>肌肉</th><th>起点</th><th>止点</th><th>功能</th></tr>
+      ${atlas.map(m=>`<tr><td>${m}</td><td>${ATLAS[m].o}</td><td>${ATLAS[m].i}</td><td>${ATLAS[m].f}</td></tr>`).join('')}
+    </table>
+    <div class="src" style="margin:8px 0 0">起止点：奈特解剖图谱核心整理 ｜ 复合肌群显示「—」（T7 105 条：81 有起止点）</div>
+  </div>
+  <div class="sec-cap">常见错误（关联 FMS 代偿）</div>
+  <div class="dt-sec dt-danger"><ul>${x.common_errors.map(c=>`<li>${c}</li>`).join('')}</ul>
+    <div class="src" style="color:#7a5555;margin-top:8px">FMS 关联：${x.fms_related.join('、')}（四阶段纠正为二批）</div></div>
+  <div class="sec-cap">呼吸节奏</div>
+  <div class="dt-sec dt-breath" style="font-size:12px;line-height:1.9;color:#c9ecd9">${x.breathing}</div>
+  <div class="sec-cap">次数区间（ACSM/邦帕）</div>
+  <div class="dt-sec"><div class="rr">
+    ${Object.entries(x.rep_range).map(([k,v])=>`<div class="cell"><b>${v}</b><span>${k}</span></div>`).join('')}
+  </div></div>
+  <div class="sec-cap">进阶 / 退阶 / 替代</div>
+  <div class="dt-sec">
+    <div style="font-size:10px;color:var(--dim);margin-bottom:6px">进阶</div><div class="linkrow">${x.progressions.map(v=>`<span class="chip">${v}</span>`).join('')}</div>
+    <div style="font-size:10px;color:var(--dim);margin:10px 0 6px">退阶</div><div class="linkrow">${x.regressions.map(v=>`<span class="chip">${v}</span>`).join('')}</div>
+    <div style="font-size:10px;color:var(--dim);margin:10px 0 6px">替代（同肌群）</div><div class="linkrow">${x.substitutes.map(v=>`<span class="chip">${v}</span>`).join('')}</div>
+  </div>
+  <div class="sec-cap">我的记录（v1.7 新增 · 对标训记动作维度历史）</div>
+  <div class="dt-sec">
+    <div class="chart" style="padding:10px 6px 6px">
+      <svg viewBox="0 0 320 90" style="width:100%">
+        ${(()=>{const pts=[{w:'07-15',v:62},{w:'07-29',v:66},{w:'08-12',v:71},{w:'08-26',v:76},{w:'09-06',v:80}];
+        const W=320,H=90,P=24,xs=i=>P+i*(W-2*P)/(pts.length-1),ys=v=>H-P-(v-58)/(84-58)*(H-2*P);
+        const path=pts.map((p,i)=>`${i?'L':'M'}${xs(i).toFixed(1)},${ys(p.v).toFixed(1)}`).join(' ');
+        return `${[60,70,80].map(v=>`<line x1="${P}" y1="${ys(v)}" x2="${W-P}" y2="${ys(v)}" stroke="#26324a" stroke-dasharray="3 4"/><text x="2" y="${ys(v)+3}" fill="#64748B" font-size="7">${v}</text>`).join('')}
+        <path d="${path} L${xs(pts.length-1)},${H-P} L${xs(0)},${H-P} Z" fill="rgba(242,106,21,.15)"/>
+        <path d="${path}" fill="none" stroke="#F97316" stroke-width="2.2" stroke-linecap="round"/>
+        ${pts.map((p,i)=>`<circle cx="${xs(i)}" cy="${ys(p.v)}" r="${i===pts.length-1?4:2.5}" fill="${i===pts.length-1?'#FDBA74':'#F97316'}"/>`).join('')}
+        <text x="${xs(4)-26}" y="${ys(pts[4].v)-7}" fill="#FDBA74" font-size="8" font-weight="700">80kg 🏅</text>`;})()}
+      </svg>
+    </div>
+    <div style="display:flex;gap:8px;margin:8px 0">
+      <div style="flex:1;text-align:center;background:var(--card2);border-radius:12px;padding:7px"><b class="mono" style="font-size:13px">80kg</b><div style="font-size:9px;color:var(--dim)">e1RM</div></div>
+      <div style="flex:1;text-align:center;background:var(--card2);border-radius:12px;padding:7px"><b class="mono" style="font-size:13px">60kg</b><div style="font-size:9px;color:var(--dim)">最重单次</div></div>
+      <div style="flex:1;text-align:center;background:var(--card2);border-radius:12px;padding:7px"><b class="mono" style="font-size:13px">14,210</b><div style="font-size:9px;color:var(--dim)">累计容量kg</div></div>
+    </div>
+    <div>${[['09-06','60kg×5×5','全完成→+2.5'],['09-02','57.5kg×5×5','全完成'],['08-29','57.5kg×5×4','末组失败'],['08-26','55kg×5×5','全完成']].map(r=>`
+      <div class="prline"><span style="color:var(--dim);width:42px">${r[0]}</span><span class="grow mono" style="font-size:12px">${r[1]}</span><span style="font-size:10px;color:var(--sub)">${r[2]}</span></div>`).join('')}
+    </div>
+    <div class="src" style="margin:8px 0 0">完整历史分页加载 ｜ 与执行页 sheet / 历史 Tab 同一聚合（三层入口，PRD 5.11）</div>
+  </div>
+  <div class="sec-cap">练后拉伸关联</div>
+  <div class="dt-sec"><div class="linkrow">
+    <span class="chip on" data-go="5">胸大肌拉伸(门框法) ST_006</span>
+    <span class="chip" data-go="4">拉伸专区 →</span>
+  </div></div>`
+  :`
+  <div class="sec-cap">骨架条目（诚实两档渲染 · PRD 5.1.2）</div>
+  <div class="dt-sec">
+    <ul>
+      <li>可用信息：名称 / 部位（${x.c}）/ 器械（${x.q}）/ 目标肌群（${x.t.join('、')}）/ 协同肌（${x.s.join('、')}）</li>
+      <li><b>详解完善中</b>——分步说明 / 发力要点 / 呼吸 / 易错点 / 禁忌 逐批补全（270 条详解已就绪，长尾按需迭代）</li>
+      <li>同肌群动作关联仍可用（T1 substitutes 字段）</li>
+    </ul>
+  </div>
+  <div class="src">不做假数据：缺失字段明确标注，不虚构演示内容</div>`}
+  <div style="height:12px"></div>`;
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-tier]');if(b){dtTier=b.dataset.tier;render();}
+});
+/* ================================================================
+   P4 拉伸列表（场景筛选 + 疼痛方案）
+================================================================ */
+let stScene='训练后';
+function pStList(){
+  return `
+  <div class="c-head">
+    <div class="hi">拉伸专区 · T5 56 条 + 11 疼痛方案</div>
+    <h1>练后拉伸</h1>
+    <div class="sub">今日已练：大腿 / 臀 / 髋 → 推荐 4 个（10-15 分钟）｜ PNF 六步法协议内置</div>
+  </div>
+  <div class="frow">
+    ${['训练后','日常','康复','训练前'].map(c=>`<span class="chip ${stScene===c?'on':''}" data-scene="${c}">${c}</span>`).join('')}
+    <span class="fl" style="margin-left:auto">11 类疼痛方案 →</span>
+  </div>
+  <div class="card" style="padding:12px 16px;background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.35)">
+    <b style="font-size:12px;color:#4ADE80">PNF 拉伸六步法（协议内置）</b>
+    <div style="font-size:11px;color:#CBD5E1;line-height:1.8;margin-top:4px">初始姿势 → 拉伸至终止点（轻微刺痛即停）→ 放松 → 抗阻力收缩5-10秒 → 放松 → 拉伸至新终止点；重复 3-6 次</div>
+  </div>
+  ${STRETCH.filter(s=>s.scene.includes(stScene)).map(s=>`
+  <div class="strow" data-go="5">
+    <div class="grow"><div class="tg">${s.tg.join(' / ')}${s.sec?` · ${s.sec}`:''}</div>
+    <h4>${s.n}</h4><div class="meta">${s.id} · ${s.dur}</div></div>
+    <span class="mth">${s.m}</span>
+  </div>`).join('')}
+  <div class="sec-cap">疼痛方案（P0 验收：挂排除清单+就医引导）</div>
+  <div class="card" style="font-size:12px;color:#CBD5E1;line-height:1.9;padding:14px">
+    <b style="color:var(--gold)">膝部疼痛（跑步膝）</b>→ 股直肌拉伸 ST_031、阔筋膜张肌拉伸 ST_033<br>
+    <b style="color:var(--gold)">颈部疼痛</b>→ 上斜方肌拉伸 ST_001、肩胛提肌拉伸 ST_005<br>
+    <div style="color:var(--dim);font-size:10px;margin-top:6px">⚠ 排除清单：急性外伤 / 麻木放射痛 / 术后不适用 → 就医引导，不替代诊断</div>
+  </div>
+  <div style="height:8px"></div>`;
+}
+document.addEventListener('click',e=>{
+  const c=e.target.closest('[data-scene]');if(c){stScene=c.dataset.scene;render();}
+});
+/* ================================================================
+   P5 拉伸详情
+================================================================ */
+function pStDetail(){
+  const s=stById('ST_034');
+  return `
+  <div class="c-head">
+    <div class="hi">${s.id} · ${s.m} · ${s.scene.join('/')}</div>
+    <h1>${s.n}</h1>
+  </div>
+  <div class="card" style="padding:14px 16px">
+    <div style="font-size:10px;letter-spacing:2px;color:#4ADE80;font-weight:700">目标肌肉</div>
+    <div style="font-size:14px;font-weight:800;margin-top:4px">${s.tg.join('、')}</div>
+    <div style="font-size:11px;color:var(--sub);margin-top:2px">次要：${s.sec||'—'} ｜ 剂量：${s.dur}</div>
+  </div>
+  <div class="imgblock">
+    <div style="height:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--card2);border-bottom:1px dashed var(--line)"><div style="font-size:26px;line-height:1">🔒</div><div style="font-size:11px;color:var(--dim);padding:0 20px;text-align:center;line-height:1.7"><b style="color:#c4b5fd">《拉伸运动系统训练》坐姿膝屈肌拉伸图版</b><br>真书图仅本地评审版展示 · 公开网页版已按 PRD 7.4 热替换为本占位块</div></div>
+    <div class="cap"><b>演示图 · 自用版直挂书图</b>（v1.7 定稿）：《拉伸运动系统训练》坐姿膝屈肌拉伸图版（书页116，页码映射定律 pNNN−12 已验证）——T5 条目按资源键挂书图；商业化时热替换，自有文字描述（下方案块）永久保留</div>
+  </div>
+  <div class="card" style="background:rgba(14,165,233,.08);border-color:rgba(14,165,233,.35);padding:14px 16px">
+    <div style="font-size:10px;letter-spacing:2px;color:#7DD3FC;font-weight:700;margin-bottom:6px">图解（文字版 · desc 管线产物）</div>
+    <div style="font-size:12px;color:#E2E8F0;line-height:1.9">
+      ① 坐姿起始：坐于凳面，整条右腿平放凳上、右脚置于凳缘外侧，左腿尽量后撤撑地<br>
+      ② 前倾终位：躯干挺直收腹，以髋为轴向前向下，至大腿后侧轻微刺痛即停（图中分镜 2）<br>
+      ③ 抗阻循环：右腿下压凳面抗阻 5-10 秒 → 放松 → 再次前倾至新终止点（图中分镜 3，箭头示发力方向）<br>
+      <span style="color:var(--dim);font-size:10px">——源书图解页转写的自有文字（版权合规 PRD 7.4），全书 227 页图解已随 RAG v3 入库</span>
+    </div>
+  </div>
+  ${s.steps.map((x,i)=>`<div class="stepcard"><div class="n">${i+1}</div><p>${x}</p></div>`).join('')}
+  <div class="card" style="background:rgba(240,72,62,.1);border-color:rgba(240,72,62,.35);padding:14px 16px">
+    <div style="font-size:10px;letter-spacing:2px;color:var(--warn);font-weight:700;margin-bottom:6px">注意事项</div>
+    ${s.warnings.map(w=>`<div style="font-size:12px;color:var(--ink);line-height:1.9">· ${w}</div>`).join('')}
+  </div>
+  <div class="card" style="background:rgba(242,106,21,.08);border-color:rgba(242,106,21,.35);padding:14px 16px">
+    <div style="font-size:10px;letter-spacing:2px;color:var(--gold);font-weight:700;margin-bottom:6px">PNF 协议</div>
+    <div style="font-size:12px;color:#E2E8F0;line-height:1.9">${s.pnf}</div>
+  </div>
+  <div class="src">${s.note} ｜ 来源：${s.src}</div>`;
+}
+/* ================================================================
+   P6 训练执行（独立页 · 组类型系统 + 打勾即弹 + sheet 速览）
+================================================================ */
+let repLeft=5,setDone=2,restOn=false;
+function pRun(){
+  const it=TODAY.items[0];
+  /* 训记式组行：重量×次数双输入可改 + 完成打勾（v1.7 修订：模板只是预填，组/次/重训练中全部可改） */
+  /* v3 简化（用户反馈）：删 ± 步进与 1RM% 参考列——点数字直接输入，一行=组号+重量+次数+完成 */
+  const setRow=(i,type,side,failed,drop,w,reps,segs,done,cur)=>`
+  <div class="setrow ${type==='warm'?'warm':''} ${cur?'cur':''}">
+    <span class="sn">${type==='warm'?'热身':'组 '+i}${type==='warm'?'<span class="t">WARMUP</span>':side?'<span class="t">'+side+' 侧</span>':''}${cur?'<span class="t" style="color:var(--acc1)">▶ 当前</span>':''}</span>
+    <input value="${w}" inputmode="decimal"><span class="u">kg</span>
+    <span class="u">×</span>
+    ${segs?`<span class="badge hl mono" style="flex:none">12+8+6</span><span style="font-size:10px;color:var(--dim);flex:none;line-height:1.4">Drop Set<br>50/45/40</span>`
+      :`<input value="${reps}" inputmode="numeric" style="width:40px"><span class="u">次</span>`}
+    ${drop&&!segs?'<span class="badge hl" style="flex:none">递减</span>':''}
+    ${type==='warm'?'':`<button class="rowmenu" data-rowmenu data-failed="${failed||0}" title="组选项">⋯</button>`}
+    <button class="setdone" data-setdone="${done?1:0}" style="border-color:${done?'var(--ok)':'#3B4A66'};background:${done?'var(--ok)':'transparent'};color:${done?'#04220f':'#8fa0b8'}">${done?'✓':''}</button>
+  </div>`;
+  return `
+  <div class="run-top">
+    <span data-go="1" style="cursor:pointer">‹ 退出</span>
+    <span>${TODAY.plan} · 第${TODAY.week}周 · 动作 1/4 · 第${setDone+1}/7组</span>
+    <span class="mono">12:36</span>
+  </div>
+  <div class="run-ex">
+    <div class="cat">${it.ex.id} · ${it.ex.d} · ${it.ex.c}</div>
+    <h2>${it.ex.n} <button class="sh-x" id="openSheet" style="margin-left:8px">要点速览 ↕</button><button class="sh-x" id="openSwap" style="margin-left:6px">换动作 ⇄</button><button class="sh-x" id="openHist" style="margin-left:6px">📈 历史</button></h2>
+    <div class="en">${it.ex.e}</div>
+    <div class="ref">上次：5×5 @47.5kg 全完成 → 加重引擎建议 <b>50kg（+2.5）</b>｜ <b>PR 60kg</b>（v1.7：动作卡常驻上次+PR）</div>
+  </div>
+  <div class="setctl">
+    <button>+ 加一组</button><button>− 删组</button><button>⚙ 序列</button><button>改为单侧 L/R</button><button>配对超级组</button>
+  </div>
+  <div class="card" style="padding:12px 14px;font-size:11px;color:var(--sub);line-height:1.8">
+    <b style="color:#c4b5fd">⚙ 序列生成器（v1.7 · PRD 5.10.1）</b>：金字塔递增 <span class="mono">45→50→55</span>（等差+2.5 片重取整）｜ 递减 <span class="mono">60→55→50</span>（-10% 步进，<b>首批</b>自动）｜ 平直（LP 常用）——输入首末重量一键填充各组，每组仍可独立改
+  </div>
+  ${setRow(1,'warm','',null,0,20,5,null,1)}
+  ${setRow(2,'work','',null,0,45,5,null,1)}
+  ${setRow(3,'work','',null,0,47.5,5,null,1)}
+  ${setRow(4,'work','',3,0,50,6,null,0,1)}
+  ${setRow(5,'work','',null,1,60,5,null,0)}
+  ${setRow(6,'work','',null,0,50,0,'segs',0)}
+  ${setRow(7,'work','L',null,0,12,10,null,0)}
+  ${setRow(8,'work','R',null,0,12,10,null,1)}
+  <div class="src">训记式自由记录（PRD 5.10.1/5.10.2 · v1.7 修订）：模板参数只是<b>预填</b>——训练中每组重量/次数直接改（± 或点数字输入），加减组随意（上方按钮），打勾即弹计时 ｜ 热身灰区不计加重 ｜ 递增/递减一键序列 ｜ 递减自动序列首批 ｜ Drop Set 分段各段独立重量 ｜ 单侧分列</div>
+  <div class="bigrest" id="restBox" style="display:${restOn?'block':'none'}">
+    <div class="lab"><span>组间休息 · 到时震动+提示音</span><span class="chip" id="rSkip" style="border-color:#475569">跳过</span></div>
+    <div class="bignum" id="rNum">180</div>
+    <div style="font-size:10px;color:var(--sub);margin-top:2px">增肌期默认 90-120s（本动作覆盖 180s）｜ 切后台时间戳续算（SRS 9.5）｜ 实际休息自动记录 ✓（A3）</div>
+    <div class="row" style="justify-content:center;gap:8px;margin-top:10px">
+      <button class="btn btn-ghost" style="padding:8px 16px" id="rAdj">+30s</button>
+      <button class="btn btn-grad" style="padding:8px 16px" id="rGo">启动</button>
+    </div>
+  </div>
+  <div class="superjump" id="superJump">
+    <span style="font-size:16px">⇄</span>
+    <div class="grow">超级组配对：<b>杠铃卧推 × 杠铃俯身划船</b>（休息共享）<br>
+    <span style="color:var(--dim);font-size:10px">本组完成 → 自动提示跳转配对动作（Hevy 式，完成即跳）</span></div>
+    <span class="badge hl" style="background:rgba(139,92,246,.18);color:#c4b5fd;border-color:rgba(139,92,246,.4)">SUPERSET</span>
+  </div>
+  <div class="thumbbar">
+    <button class="ghost">上一个动作</button>
+    <button class="main" id="logSet">记一组 · 自动休息</button>
+  </div>
+  <div class="card" style="display:flex;gap:10px;align-items:center;padding:12px 16px">
+    <div class="grow" style="font-size:11px;color:var(--sub);line-height:1.7">下一个：杠铃卧推 35kg×3组（超级组×划船）<br>全部完成 → 练后拉伸 → 完成训练出总结</div>
+    <button class="btn btn-grad" style="padding:8px 14px;font-size:12px" id="endBtn">完成训练</button>
+  </div>
+  <div style="height:8px"></div>`;
+}
+function runBind(){
+  /* ± 步进已删（v3 简化）：点数字直接输入 */
+  /* 计时（打勾即弹，startRest 统一入口） */
+  const total=180;let left=total,run=false;
+  const num=$('rNum');
+  const draw=()=>{if(num)num.textContent=left;};
+  const start=()=>{stopTimer();run=true;draw();
+    timerInt=setInterval(()=>{left--;draw();
+      if(left<=0){stopTimer();run=false;left=total;draw();}},1000);};
+  const startRest=()=>{restOn=true;const box=$('restBox');box.style.display='block';
+    box.scrollIntoView({behavior:'smooth',block:'center'});
+    left=total;start();showPRToast();};
+  window.startRest=startRest;
+  /* 组完成打勾 → 即弹计时（兑现 PRD 5.10.3 承诺） */
+  document.querySelectorAll('[data-setdone]').forEach(b=>{
+    b.onclick=()=>{const on=b.dataset.setdone==='0';
+      b.dataset.setdone=on?'1':'0';
+      b.style.borderColor=on?'var(--ok)':'#3B4A66';
+      b.style.background=on?'var(--ok)':'transparent';
+      b.style.color=on?'#04220f':'#8fa0b8';
+      b.textContent=on?'✓':'';
+      if(on)startRest();};});
+  /* 组选项 ⋯（失败标记移入此处，防汗手误触——评审 P0 修复） */
+  document.querySelectorAll('[data-rowmenu]').forEach(b=>{
+    b.onclick=()=>openRowMenu(b);});
+  if($('rGo'))$('rGo').onclick=()=>{run?stopTimer()&&0:start();run=!run;};
+  if($('rSkip'))$('rSkip').onclick=e=>{e.stopPropagation();stopTimer();run=false;left=total;draw();};
+  if($('rAdj'))$('rAdj').onclick=()=>{left+=30;draw();};
+  if($('logSet'))$('logSet').onclick=()=>startRest();
+  if($('openSheet'))$('openSheet').onclick=()=>openSheet();
+  if($('openSwap'))$('openSwap').onclick=()=>openSwap();
+  if($('openHist'))$('openHist').onclick=()=>openHist();
+  if($('endBtn'))$('endBtn').onclick=()=>endTraining();
+}
+/* 组选项 sheet：失败标记（远离主触区）/组备注 */
+function openRowMenu(btn){
+  const failed=btn.dataset.failed==='1';
+  const ov=document.createElement('div');ov.dataset.overlay='1';
+  ov.innerHTML=`
+  <div class="backdrop" data-rm-close></div>
+  <div class="sheet" style="height:32%">
+    <div class="grip"></div>
+    <div class="sh-h"><h3>本组选项</h3><button class="sh-x" data-rm-close>关闭</button></div>
+    <div class="sh-b">
+      <div class="sec" style="border:1px solid var(--warn);border-radius:12px;padding:12px 14px;cursor:pointer" data-rm-fail>
+        <b style="color:var(--warn)">标记失败 / 未完成</b>
+        <p style="font-size:11px;margin-top:4px;color:var(--sub)">回喂加重引擎：连续 2 次失败 → 下次 -10% 重置建议。放在 ⋯ 菜单防汗手误触（评审 P0）</p>
+      </div>
+      <div class="sec"><p style="color:var(--dim);font-size:11px">失败标记为有意操作，不与打勾/加减相邻</p></div>
+    </div>
+  </div>`;
+  $('screen').appendChild(ov);
+  ov.querySelectorAll('[data-rm-close]').forEach(b=>b.onclick=()=>ov.remove());
+  ov.querySelector('[data-rm-fail]').onclick=()=>{
+    btn.dataset.failed=failed?'0':'1';
+    btn.style.color=failed?'var(--sub)':'var(--warn)';
+    btn.style.borderColor=failed?'var(--line)':'var(--warn)';
+    ov.remove();};
+}
+/* ============ 肌肉图组件 v2（MuscleMap 真解剖几何 18 肌×正背，MIT·Melih Colpan；色阶 l0-l4 全局 ramp；openGym A1/A2 吸收） ============ */
+function bodyMap(frontHi, backHi, labels){
+  const D=window.BODY_PATHS;
+  if(!D){return `<div style="padding:30px;text-align:center;font-size:10px;color:var(--dim)">几何资产未加载（assets/body-paths.js）</div>`;}
+  const LV=v=>v>=1?4:v>=.66?3:v>=.33?2:v>0?1:0;
+  const view=(v,hi)=>{
+    const vset=D.male[v], P=vset.p;
+    const INERTS=window.MUSCLES_INERT.map(s=>(P[s]||[]).map(d=>`<path class="bm-sil" d="${d}"/>`).join('')).join('');
+    const MUS=window.MUSCLES_18.map(s=>{const lv=LV(hi[s]||0);
+      return (P[s]||[]).map(d=>`<path class="bm-m l${lv}" d="${d}"/>`).join('');}).join('');
+    return `<svg viewBox="${vset.vb}" style="width:100%" preserveAspectRatio="xMidYMid meet">
+      <g stroke="var(--card)" stroke-width="3" stroke-linejoin="round">${INERTS}${MUS}</g></svg>`;
+  };
+  return `<div style="display:flex;gap:8px;align-items:flex-start">
+    <div style="flex:1">${view('front',frontHi)}${labels?`<div style="text-align:center;font-size:10px;color:var(--dim);margin-top:4px">${labels[0]}</div>`:''}</div>
+    <div style="flex:1">${view('back',backHi)}${labels?`<div style="text-align:center;font-size:10px;color:var(--dim);margin-top:4px">${labels[1]}</div>`:''}</div>
+  </div>`;
+}
+/* 动作历史速览 sheet（v1.7 三层入口之一：执行页速览） */
+function openHist(){  /* 计时保持运行（A3：实际休息时长不被打断） */
+  const pts=HIST.squat;
+  const W=280,H=64,P=8;
+  const xs=i=>P+i*(W-2*P)/(pts.length-1);
+  const ys=v=>H-P-(v-68)/(96-68)*(H-2*P);
+  const path=pts.map((p,i)=>`${i?'L':'M'}${xs(i).toFixed(1)},${ys(p.v).toFixed(1)}`).join(' ');
+  const ov=document.createElement('div');ov.dataset.overlay='1';
+  ov.innerHTML=`
+  <div class="backdrop" data-hist-close></div>
+  <div class="sheet">
+    <div class="grip"></div>
+    <div class="sh-h"><h3>📈 动作历史 · 高杆位杠铃深蹲</h3><button class="sh-x" data-hist-close>收起</button></div>
+    <div class="sh-b">
+      <div style="display:flex;gap:10px;margin-bottom:10px">
+        <div style="flex:1;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:8px 12px"><div style="font-size:9px;color:var(--dim)">上次</div><b class="mono" style="font-size:15px">50kg×5×5</b><div style="font-size:9px;color:#4ADE80">全完成 → 建议+2.5</div></div>
+        <div style="flex:1;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:8px 12px"><div style="font-size:9px;color:var(--dim)">PR 最重 / e1RM</div><b class="mono" style="font-size:15px">50kg / 93kg</b><div style="font-size:9px;color:#FDBA74">🏅 09-02</div></div>
+      </div>
+      <div style="background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:8px 10px 4px">
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%">
+          <path d="${path}" fill="none" stroke="#F97316" stroke-width="2" stroke-linecap="round"/>
+          ${pts.map((p,i)=>`<circle cx="${xs(i)}" cy="${ys(p.v)}" r="${i===pts.length-1?3.5:2}" fill="${i===pts.length-1?'#FDBA74':'#F97316'}"/>`).join('')}
+        </svg>
+        <div style="font-size:9px;color:var(--dim);text-align:center;padding-bottom:4px">e1RM 迷你趋势（近 9 周 ↑31%）——训练中决定加不加重同屏可查</div>
+      </div>
+      <div class="sec" style="margin-top:10px"><b class="cap">最近 4 次</b>
+        ${[['09-06','50kg×5×5','全完成'],['09-02','50kg×5×5','破50 🏁'],['08-29','47.5kg×5×5','全完成'],['08-26','47.5kg×5×4','末组失败@4']].map(r=>`
+        <div class="prline"><span style="color:var(--dim);width:42px">${r[0]}</span><span class="grow mono" style="font-size:12px">${r[1]}</span><span style="font-size:10px;color:var(--sub)">${r[2]}</span></div>`).join('')}
+      </div>
+      <div class="sec"><p style="color:var(--dim);font-size:11px">三层入口共享一份本地聚合（SRS 9.5 history_by_exercise）：此处速览 → 动作详情「我的记录」完整版 → 历史 Tab 钻取（PRD 5.11，v1.7 对标训记）</p></div>
+    </div>
+  </div>`;
+  $('screen').appendChild(ov);
+  ov.querySelectorAll('[data-hist-close]').forEach(b=>b.onclick=()=>ov.remove());
+}
+function openSwap(){
+  stopTimer();
+  const ov=document.createElement('div');ov.dataset.overlay='1';
+  const cand=[
+    {n:'史密斯机卧推',q:'史密斯机',tag:'同器械 · substitutes 直连',best:true},
+    {n:'哑铃卧推',q:'哑铃',tag:'同主动肌（胸大肌）'},
+    {n:'器械卧推',q:'固定器械',tag:'substitutes 直连'},
+    {n:'俯卧撑',q:'自重',tag:'substitutes 直连'},
+    {n:'双杠臂屈伸',q:'自重',tag:'substitutes 直连'}];
+  ov.innerHTML=`
+  <div class="backdrop" data-swap-close></div>
+  <div class="sheet">
+    <div class="grip"></div>
+    <div class="sh-h"><h3>换动作 · 剩余组继承</h3><button class="sh-x" data-swap-close>取消</button></div>
+    <div class="sh-b">
+      <div class="sec"><b class="cap">匹配逻辑（T1 字段本地匹配 · PRD 5.10.7）</b>
+      <p>同主动肌候选池 → 加权：同器械 &gt; substitutes 直连 &gt; agonist/synergists 交叉；换后已完成组不动、剩余组继承（Fitbod 补位式，肌录用结构化字段离线实现）</p></div>
+      ${cand.map(c=>`
+      <div class="sec" style="border:1px solid var(--line);border-radius:16px;padding:12px 14px;cursor:pointer" data-pick="${c.n}">
+        <b style="font-size:14px;color:var(--ink)">${c.n}${c.best?' <span class="badge hl">最匹配</span>':''}</b>
+        <p style="margin-top:4px">${c.q} ｜ ${c.tag}（重量换算系数为二批）</p>
+      </div>`).join('')}
+    </div>
+  </div>`;
+  $('screen').appendChild(ov);
+  ov.querySelectorAll('[data-swap-close]').forEach(b=>b.onclick=()=>ov.remove());
+  ov.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{
+    ov.remove();
+    const t=document.createElement('div');t.dataset.overlay='1';
+    t.innerHTML=`<div style="position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:60;background:linear-gradient(90deg,#8B5CF6,#EF4444);color:#fff;font-weight:800;font-size:13px;padding:10px 16px;border-radius:16px;box-shadow:0 10px 24px rgba(139,92,246,.4)">已换为 ${b.dataset.pick} · 剩余 3 组继承 ✓</div>`;
+    $('screen').appendChild(t);setTimeout(()=>t.remove(),1800);});
+}
+function endTraining(){
+  stopTimer();
+  const ov=document.createElement('div');ov.dataset.overlay='1';
+  ov.innerHTML=`
+  <div class="backdrop" data-end-close></div>
+  <div class="sheet">
+    <div class="grip"></div>
+    <div class="sh-h"><h3>训练总结 · 练胸和三头 <span style="color:#c4b5fd;font-size:13px">✎</span></h3><button class="sh-x" data-end-close>关闭</button></div>
+    <div class="sh-b">
+      <div class="sec"><b class="cap">今日数据（首批交付）</b>
+      <p>62 分钟 ｜ 总容量 3,708kg ｜ 完成率 96% ｜ 新 PR ×1（深蹲 5×5 @50kg）</p></div>
+      <div class="sec"><b class="cap">本次训练肌肉图（前后视图 · 按当日动作肌群聚合 · 对标训记）</b></div>
+      <div style="background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:14px">
+        ${bodyMap(
+          {chest:1,deltoids:1,biceps:.6,abs:1,quadriceps:.5,serratus:.3,obliques:.4},
+          {trapezius:.6,'upper-back':1,triceps:1,gluteal:1,hamstring:1,'lower-back':.5},
+          ['正面 · 胸/肩/腹为主','背面 · 背阔/三头/臀/腘绳']
+        )}
+        <div style="display:flex;gap:12px;align-items:center;margin-top:8px;font-size:11px;color:var(--sub)">
+          <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:linear-gradient(135deg,#FF9A4D,#F0483E);margin-right:3px;vertical-align:-1px"></i>本次训练</span>
+          <span style="color:var(--dim)">发光=当日动作 target 肌群（T1 聚合）；保存分享卡为二批头 B5</span>
+        </div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="thumbbar" style="padding:0">
+        <button class="ghost" data-save>保存图片</button>
+        <button class="main" data-share>分享</button>
+      </div>
+      <div class="sec" style="margin-top:12px"><p style="color:var(--dim);font-size:11px">标题默认取计划 Day focus、可改名（✎）——贯穿历史日历格与训练列表；保存/分享卡为二批头 B5（首批交付总结页与数据接口，PRD 5.10.5）</p></div>
+    </div>
+  </div>`;
+  $('screen').appendChild(ov);
+  ov.querySelectorAll('[data-end-close]').forEach(b=>b.onclick=()=>ov.remove());
+  ov.querySelectorAll('[data-save],[data-share]').forEach(b=>b.onclick=()=>{
+    const t=document.createElement('div');t.dataset.overlay='1';
+    t.innerHTML=`<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:62;background:var(--card);border:1px solid var(--line);color:var(--ink);font-size:13px;font-weight:700;padding:14px 22px;border-radius:16px">${b.dataset.save?'图片已保存（演示）':'分享卡已生成（演示·二批头）'}</div>`;
+    $('screen').appendChild(t);setTimeout(()=>t.remove(),1500);});
+}
+function showPRToast(){
+  const t=document.createElement('div');t.dataset.overlay='1';
+  t.innerHTML=`<div style="position:absolute;top:64px;left:50%;transform:translateX(-50%);z-index:61;background:linear-gradient(90deg,#F97316,#DB2777);color:#fff;font-weight:900;font-size:13px;padding:12px 20px;border-radius:16px;box-shadow:0 12px 28px rgba(219,39,119,.45)">🏅 新PR！最重 5×5 @50kg（e1RM 93kg 新高）</div>`;
+  $('screen').appendChild(t);setTimeout(()=>t.remove(),2200);
+}
+function openSheet(){  /* 计时保持运行 */
+  const ov=document.createElement('div');ov.dataset.overlay='1';
+  ov.innerHTML=`
+  <div class="backdrop" data-sheet-close></div>
+  <div class="sheet" id="runSheet">
+    <div class="grip"></div>
+    <div class="sh-h"><h3>要点速览 · ${EX1436.n}</h3><button class="sh-x" data-sheet-close>收起</button></div>
+    <div class="sh-b">
+      <div class="sec"><b class="cap">发力要点</b><p>· ${EX1436.kp}</p></div>
+      <div class="sec"><b class="cap">呼吸</b><p>${EX1436.breathing}</p></div>
+      <div class="sec"><b class="cap">次数参考</b><p>增肌 8-12 ｜ 最大力量 1-6 ｜ 肌肉耐力 15-25（ACSM/邦帕，T2 参数）</p></div>
+      <div class="sec"><b class="cap">完整详情</b><p style="color:var(--dim);font-size:11px">半屏速览不打断执行流；完整分步/解剖/禁忌 → 动作库详情页（双轨，PRD 3.1）</p></div>
+    </div>
+  </div>`;
+  $('screen').appendChild(ov);
+  ov.querySelectorAll('[data-sheet-close]').forEach(b=>b.onclick=()=>ov.remove());
+}
+/* ================================================================
+   P7 计划列表（13 套 · 目标筛选 · 分组）
+================================================================ */
+let plGoal='全部';
+function pPlanList(){
+  const goals=['全部','增肌','减脂','最大力量','健康维持'];
+  const list=PLANS.filter(p=>plGoal==='全部'||p.goal===plGoal);
+  return `
+  <div class="c-head">
+    <div class="hi">周期模板 · T3 13 套全就绪（邦帕×ACSM 6 + PPST 7）</div>
+    <h1>计划</h1>
+    <div class="sub">当前进行：PT_001 第 5 周（轻问卷匹配，可随时换）｜ 匹配逻辑：目标×水平×天数×器械 → T2 参数 → T3 模板</div>
+  </div>
+  <div class="frow">${goals.map(g=>`<span class="chip ${plGoal===g?'on':''}" data-goal="${g}">${g}</span>`).join('')}</div>
+  <div class="sec-cap">进行中</div>
+  ${PLANS.filter(p=>p.cur).map(p=>`
+  <div class="pl act" data-go="8">
+    <div class="row"><h4 class="grow">${p.n}</h4><span class="badge hl">第5/12周</span></div>
+    <div class="meta">${p.id} · ${p.per}周期 · ${p.goal} · ${p.lv} · 每周${p.dpw}练 · 轻问卷匹配</div>
+    <div class="phasebar">${p.ph.map((x,i)=>`<i class="${i<2?'on':''}"></i>`).join('')}</div>
+  </div>`).join('')}
+  <div class="sec-cap">达人模板 · 按训练部位（11 个单日模板 · 整理自公开教学内容）</div>
+  <div class="frow">${['全部','胸+肩+三头','背','腿+臀','肩臂','女性·体态'].map(c=>`<span class="chip ${c==='全部'?'on':''}" style="flex:none">${c}</span>`).join('')}</div>
+  ${[
+    {n:'凯圣王×谭成义 · 胸肩三头日',p:'胸+肩+三头',m:'卧推主项 RPE8 渐进 ｜ 5 动作 ｜ CD_001',hl:1},
+    {n:'凯圣王×谭成义 · 背二头日',p:'背',m:'背阔主攻+开肘划船 ｜ 5 动作 ｜ CD_002',hl:1},
+    {n:'凯圣王×谭成义 · 下肢后侧日',p:'腿+臀',m:'髋开发为主 · 新手不硬拉 ｜ 5 动作 ｜ CD_003',hl:1},
+    {n:'谭成义 · 胸手臂腹日',p:'胸+肩+三头',m:'夹胸募集+卧推5+10混合组 ｜ 6 动作 ｜ CD_004'},
+    {n:'凯圣王 · 躯干日（二分A）',p:'胸+肩+三头',m:'体育课式带练 · 61万播放 ｜ 5 动作 ｜ CD_005'},
+    {n:'凯圣王 · 四肢日（二分B）',p:'腿+臀',m:'高脚杯蹲+RDL ｜ 3 动作 ｜ CD_006'},
+    {n:'谭成义 · 胸日（四分）',p:'胸+肩+三头',m:'力竭训练特色 ｜ 4 动作 ｜ CD_007'},
+    {n:'谭成义 · 背日（四分）',p:'背',m:'引体 4-6 组+划船 ｜ 4 动作 ｜ CD_008'},
+    {n:'谭成义 · 肩臂日（四分）',p:'肩臂',m:'实力推+面拉+超级组 ｜ 4 动作 ｜ CD_009'},
+    {n:'张丹玥 · 上肢体态日',p:'女性·体态',m:'圆肩改善 · 居家/健身房 ｜ 3 动作 ｜ CD_010'},
+    {n:'张丹玥 · 髋臀日',p:'女性·体态',m:'侧滑步+RDL 臀部力量 ｜ 2 动作 ｜ CD_011'}
+  ].map(t=>`
+  <div class="pl" data-go="13" style="padding:12px 14px">
+    <div class="row"><h4 class="grow" style="font-size:13px">${t.n}</h4><span class="badge" style="background:rgba(139,92,246,.16);color:#c4b5fd;border:1px solid rgba(139,92,246,.4);font-size:9px;flex:none">${t.p}</span></div>
+    <div class="meta">${t.m}</div>
+  </div>`).join('')}
+  <div class="src">模板粒度=单训练日（「谭成义三分化·胸肩日」是一个模板）——与「我的模板」同粒度，复制即用（PRD 5.6.6）；整套周期数据保留在 creator_templates（CD_XXX.parent 指向 CT_XXX）供计划生成引用；标注「整理自公开教学内容」不作人物背书</div>
+  <div class="sec-cap">系统模板库（T3 13 套 · 免费无限制 · 永不设模板数上限）</div>
+  ${list.filter(p=>!p.cur).map(p=>`
+  <div class="pl" data-go="8">
+    <h4>${p.n}</h4>
+    <div class="meta">${p.id} · ${p.per} · ${p.goal} · ${p.lv} · 每周${p.dpw}练 · ${p.wk}周${p.ppst?' · PPST':''}</div>
+    <div class="phasebar">${p.ph.map(x=>`<i></i>`).join('')}</div>
+  </div>`).join('')}
+  <div class="src">反面教训（竞品调研）：Strong 限 3 模板/Hevy 限 4 模板被骂最狠——肌录全量本地无限</div>`;
+}
+document.addEventListener('click',e=>{
+  const c=e.target.closest('[data-goal]');if(c){plGoal=c.dataset.goal;render();}
+});
+/* ================================================================
+   P8 计划详情（+ 参数可编辑演示）
+================================================================ */
+function pPlanDetail(){
+  const t=TODAY;
+  return `
+  <div class="c-head">
+    <div class="hi">PT_001 · 线性 · 12周 · 增肌/初学者/3练</div>
+    <h1>新手线性周期</h1>
+  </div>
+  <div class="hero" style="padding:16px">
+    <span class="tag">第${t.week}周 · 肥大期（4-7周 60%~80%）</span>
+    <h3>全身3练 A/B/C</h3>
+    <div class="sub2">本周 ${t.focus} · 台阶式 3:1 加重 · 第12周减载测试</div>
+    <button class="go" data-go="6" style="margin-top:14px">去练今天的课表 →</button>
+  </div>
+  <div class="editdemo">
+    <span style="font-size:16px">✎</span>
+    <div class="grow">计划参数可编辑（PRD 5.6.4）：模板推荐值为默认，点任意动作改组/次/重量/休息——改动存<b>计划实例</b>，不回写模板</div>
+    <span class="badge hl" style="background:rgba(139,92,246,.18);color:#c4b5fd;border-color:rgba(139,92,246,.4)">EDIT</span>
+  </div>
+  <div class="sugcard" style="background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.4)">
+    <div class="cap" style="color:#c4b5fd"><i style="background:#8B5CF6;box-shadow:0 0 8px #8B5CF6"></i>周期衔接卡（第 12 周触发 · 此处演示态提前展示 · PRD 5.6.5）</div>
+    <div class="sug-row"><div class="delta" style="flex:1">判据：5×5 连续 3 次退行后仍停滞 @52.5kg（PPST 初级结束判据）</div></div>
+    <div class="sug-row" style="border-top:none">
+      <div class="delta" style="flex:1">进阶推荐 <b style="color:#c4b5fd">PT_009 得州训练法（中级）</b>｜ 一键复制衔接：起始重量承接上期末值 <b style="color:#c4b5fd">50kg</b>（含退行修正）</div>
+      <span class="adopt ok">复制衔接</span>
+    </div>
+    <div style="font-size:9px;color:#8a7bb0;margin-top:6px">减载周到期自动插入提示（3:1 台阶）｜ 纯本地规则——训记只有手动复制，肌录周期化「开始→推进→衔接」全程闭环</div>
+  </div>
+  <div class="sec-cap">阶段时间线</div>
+  ${PT001.phases.map(ph=>`
+  <div class="phaseline">
+    <span class="pct">${ph.pct}</span>
+    <h4>${ph.weeks} · ${ph.name}</h4>
+    <div class="meta">${ph.vol}${ph.goal?`<br>目标：${ph.goal}`:''}${ph.rest?` ｜ 组间 ${ph.rest}`:''}</div>
+  </div>`).join('')}
+  <div class="sec-cap">每周结构</div>
+  ${PT001.weekly.map(w=>`
+  <div class="card" style="padding:14px 16px">
+    <h4 style="font-size:14px;font-weight:800">Day ${w.day} · ${w.focus}</h4>
+    <div style="font-size:11px;color:var(--sub);line-height:1.8;margin-top:5px">${w.pattern}<br><span style="color:var(--dim)">${w.rx}</span></div>
+  </div>`).join('')}
+  <div class="sec-cap">今日课表（三段：热身 → 正式 → 拉伸 · 可编辑）</div>
+  <div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:10px">
+    <div class="exc idx" style="margin:0;width:34px;height:34px;border-radius:12px;font-size:13px;background:linear-gradient(140deg,#5B6B8C,#7C8BA1)">热</div>
+    <div class="grow"><b style="font-size:13px">热身 · 动态热身</b><div style="font-size:10px;color:var(--sub);margin-top:2px">5-10 分钟 · 踝/髋/胸椎打开 + 空杆渐进（轻量引导，完整热身库二批 5.2.2）</div></div>
+    <span class="badge hl" style="background:rgba(34,197,94,.14);color:#4ADE80;border-color:rgba(34,197,94,.4)">✓ 已完成</span>
+  </div>
+  ${t.items.map((it,i)=>`
+  <div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:10px" data-go="6">
+    <div class="exc idx" style="margin:0;width:34px;height:34px;border-radius:12px;font-size:13px">${i+1}</div>
+    <div class="grow"><b style="font-size:13px">${it.ex.n}${it.super?' <span style="color:#c4b5fd;font-size:10px">×超级组</span>':''}${it.side?' <span style="color:#c4b5fd;font-size:10px">L/R</span>':''}</b>
+    <div style="font-size:10px;color:var(--sub);margin-top:2px">${it.w} · ${it.sets}×${it.reps} · 休${it.rest}s</div></div>
+    <span class="badge plain">✎ 改</span>
+  </div>`).join('')}
+  <div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:10px" data-go="4">
+    <div class="exc idx" style="margin:0;width:34px;height:34px;border-radius:12px;font-size:13px;background:linear-gradient(140deg,#7C8BA1,#5B6B8C)">拉</div>
+    <div class="grow"><b style="font-size:13px">练后拉伸 · 4 个动作</b><div style="font-size:10px;color:var(--sub);margin-top:2px">按今日部位推荐（大腿/臀/髋）· 10-15 分钟 · T5 映射 → 拉伸专区</div></div>
+    <span class="badge plain">待训练</span>
+  </div>
+  <div class="sec-cap">减载与加重规则（引擎依据）</div>
+  <div class="rulecard">${PT001.deload}<br><br>配套：正式组全完成 → 下次 +2.5~5kg；连续失败（失败标记×2）→ 减 10% 重置（PPST 初级 LP）</div>
+  <div class="src">${PT001.notes} ｜ 来源：${PT001.src}</div>`;
+}
+/* ================================================================
+   P9 历史全景（周/月/年 + 日历热力 + 月报）
+================================================================ */
+let histP='月';
+function pHistory(){
+  /* 训练日标题（训记式+用户自定义）：默认取计划 Day focus，可改名——演示态循环分化标题 */
+  const T3T=['练胸和三头','练背和二头','练腿和肩'];
+  const TAG={'练胸和三头':'胸+三','练背和二头':'背+二','练腿和肩':'腿+肩'};
+  let seq=0;
+  const days=HIST.month.map((v,i)=>v?{d:i+1,v,t:T3T[seq++%3],dur:46+(i%3)*7,sets:12+(i%4)}:null).filter(Boolean);
+  const heat=(day,today)=>`<div class="d mk ${today?'today':''}" title="${day.d}日 ${day.t} · ${day.v}kg">${day.d}<em>${TAG[day.t]}</em></div>`;
+  /* 2026-09-01 为周二：前置 1 空格 */
+  const monthCal=`<div class="d empty"></div>`+days.map(day=>heat(day,day.d===7)).join('');
+  const monthBars=[1180,1420,1350,1260,1490,1520,1380,1610,1550,1430,1680,1720];
+  return `
+  <div class="c-head">
+    <div class="hi">历史 · 全景（v1.6 新增一级 Tab · PRD 5.11）</div>
+    <h1>训练全景</h1>
+    <div class="sub">容量=组×重×次 ｜ 颜色越深当日容量越大 ｜ 点击任意日期回看当日课表</div>
+  </div>
+  <div class="period-sw">
+    ${['周','月','年'].map(p=>`<button class="${histP===p?'on':''}" data-hp="${p}">${p}</button>`).join('')}
+  </div>
+  ${histP==='月'?`
+  <div class="cal">
+    ${['一','二','三','四','五','六','日'].map(w=>`<div class="wd">${w}</div>`).join('')}
+    ${monthCal}
+  </div>
+  <div class="cal-legend">
+    <span><i style="background:linear-gradient(90deg,#F97316,#EF4444)"></i>已训练（标记色可自定义）</span>
+    <span><i style="background:var(--card);border:1px solid var(--line)"></i>休息日</span>
+    <span style="margin-left:auto">格内=当日训练标题缩写（演示态）</span>
+  </div>
+  <div class="sec-cap">本月训练记录（${days.length} 次 · 点开回看当日课表）</div>
+  ${days.slice(-6).reverse().map(day=>`
+  <div class="strow" style="cursor:pointer">
+    <div class="grow"><div class="tg">9月${day.d}日 · ${day.dur} 分钟 · ${day.sets} 组 · 完成率 96%</div>
+    <h4>${day.t} <span style="color:#c4b5fd;font-size:10px;font-weight:400">✎ 自定义标题</span></h4>
+    <div class="meta">${TODAY.plan} · 第${Math.ceil(day.d/7)}周（默认 Day focus，可改名）</div></div>
+    <span class="mth">${(day.v/1000).toFixed(1)}k kg</span>
+  </div>`).join('')}
+  <div class="src">标题默认取计划 Day focus（如「全身A·蹲主导」），可自定义为「练胸和三头」等——贯穿日历格/列表/分享卡 ｜ 标记色：训练=有色、休息=无色，色板在 我的-设置-外观（首批）</div>
+  <div class="sec-cap">本月容量趋势（kg/周）</div>
+  <div class="chart">
+    <div class="trendbars">
+      ${monthBars.map((v,i)=>`<i style="height:${v/monthBars.reduce((a,b)=>Math.max(a,b),0)*100}%" title="${v}kg"></i>`).join('')}
+    </div>
+  </div>
+  <div class="card" style="padding:14px 16px">
+    <div class="row" style="justify-content:space-between;margin-bottom:8px">
+      <b style="font-size:13px">本月肌群热力</b>
+      <span style="font-size:9px;color:var(--dim)">T7 body_part 聚合 · 容量色阶</span>
+    </div>
+    ${bodyMap(
+      {chest:1,deltoids:.66,abs:.5,biceps:.66,triceps:.5,quadriceps:1,obliques:.33,serratus:.33},
+      {'upper-back':1,trapezius:.66,gluteal:.66,hamstring:1,'lower-back':.5,calves:.33,forearm:.33},
+      ['正面','背面']
+    )}
+    <div class="row" style="gap:10px;margin-top:8px;font-size:10px;color:var(--sub)">
+      <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:linear-gradient(135deg,#FF9A4D,#F0483E);margin-right:3px;vertical-align:-1px"></i>主练（胸 24% · 背 28%）</span>
+      <span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:rgba(242,106,21,.5);margin-right:3px;vertical-align:-1px"></i>兼顾（肩 12% · 臂 14%）</span>
+    </div>
+    <div style="font-size:10px;color:var(--dim);margin-top:4px">腿 18% · 腹 4% —— 前后肌群平衡提示：背部>胸部 ✓（推拉比 0.86 健康）</div>
+  </div>
+  <div class="report">
+    <h4>📄 9月报告（轻量版·纯本地聚合）<span class="cmp up" style="margin-left:auto;font-size:10px">▲ 容量环比 +13%</span></h4>
+    <div class="grid">
+      <div class="g"><b>${HIST.monthSessions}</b><span>训练次数 </span><span class="cmp up">▲ vs 上月 ${HIST.prevSessions}</span></div>
+      <div class="g"><b>${HIST.monthVol}</b><span>总容量 kg </span><span class="cmp up">▲ vs 上月 ${HIST.prevVol}</span></div>
+      <div class="g"><b>${HIST.monthRate}%</b><span>计划完成率 </span><span class="cmp up">▲ vs 上月 ${HIST.prevRate}%</span></div>
+      <div class="g"><b>${HIST.adopted}</b><span>加重建议采纳</span><span class="cmp" style="color:var(--dim)">次</span></div>
+    </div>
+    <div style="margin-top:10px">
+      ${HIST.prs.map(p=>`<div class="prline"><span class="medal">🏅</span><span style="color:var(--dim)">${p.d}</span><span class="grow">${p.t}</span><span class="badge hl">新PR</span></div>`).join('')}
+    </div>
+    <div class="src" style="margin:8px 0 0">肌群容量分布（T7 聚合）与分享海报 → 二批增强 ｜ 增强项灰显不画</div>
+  </div>`
+  :histP==='周'?`
+  <div class="card" style="padding:14px">
+    <div class="weekdata" style="height:80px">
+      <i style="height:42%"></i><i style="height:58%"></i><i style="height:50%"></i>
+      <i style="height:74%"></i><i style="height:66%"></i><i class="today" style="height:88%"></i><i style="height:20%"></i>
+    </div>
+    <div class="row" style="justify-content:space-between;margin-top:8px;font-size:9px;color:var(--dim)">
+      <span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span style="color:var(--ok)">今天</span><span>周日</span>
+    </div>
+  </div>
+  <div class="stat3">
+    <div class="s"><b>4,850</b><span>本周容量</span><div class="up">▲ 8%</div></div>
+    <div class="s"><b>3</b><span>训练次数</span><div class="up">▲ 1</div></div>
+    <div class="s"><b>96%</b><span>完成率</span><div class="up">▲ 3%</div></div>
+  </div>
+  <div class="src">周视图=首页本周卡的展开态（不重复做深）</div>`
+  :`
+  <div class="card" style="padding:14px">
+    <div class="trendbars" style="height:110px">
+      ${[9.8,11.2,10.5,12.4,13.1,12.8,14.6,15.2,14.9,16.8,17.5,18.2].map(v=>`<i style="height:${v/18.2*100}%"><em>${v}k</em></i>`).join('')}
+    </div>
+    <div class="row" style="justify-content:space-between;margin-top:14px;font-size:9px;color:var(--dim)">
+      ${['10月','11月','12月','1月','2月','3月','4月','5月','6月','7月','8月','9月'].map(m=>`<span>${m}</span>`).join('')}
+    </div>
+  </div>
+  <div class="stat3">
+    <div class="s"><b>176,890</b><span>年度容量kg</span></div>
+    <div class="s"><b>236</b><span>年度训练</span></div>
+    <div class="s"><b>92%</b><span>年度完成率</span></div>
+  </div>
+  <div class="src">年度视图（演示态）｜ 最重量同比在动作趋势页查看</div>`}
+  <div class="card" style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer" data-go="10">
+    <div class="exc idx" style="margin:0;width:36px;height:36px;border-radius:12px;font-size:14px;background:linear-gradient(140deg,#7C8BA1,#5B6B8C)">📈</div>
+    <div class="grow"><b style="font-size:13px">查动作趋势（力量曲线）</b>
+    <div style="font-size:10px;color:var(--sub);margin-top:2px">e1RM 估算趋势 · 最重重量 · PR 标记 · 同比（不足显「—」）</div></div>
+    <span style="color:var(--dim)">›</span>
+  </div>
+  <div style="height:8px"></div>`;
+}
+function histBind(){document.querySelectorAll('[data-hp]').forEach(b=>{b.onclick=()=>{histP=b.dataset.hp;render();};});}
+/* ================================================================
+   P10 动作趋势（力量曲线）
+================================================================ */
+function pTrend(){
+  const pts=HIST.squat;
+  const W=320,H=150,P=28;
+  const xs=i=>P+i*(W-2*P)/(pts.length-1);
+  const ys=v=>H-P-(v-65)/(100-65)*(H-2*P);
+  const path=pts.map((p,i)=>`${i?'L':'M'}${xs(i).toFixed(1)},${ys(p.v).toFixed(1)}`).join(' ');
+  const area=path+` L${xs(pts.length-1)},${H-P} L${xs(0)},${H-P} Z`;
+  return `
+  <div class="c-head">
+    <div class="hi">动作趋势 · 高杆位杠铃深蹲 EX_1436</div>
+    <h1>力量曲线</h1>
+    <div class="sub">e1RM = w×(1+reps/30)（Epley，本地计算）｜ 取每次训练最优组 ｜ 演示态数据</div>
+  </div>
+  <div class="chart">
+    <svg viewBox="0 0 ${W} ${H}">
+      <defs><linearGradient id="ar" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="rgba(242,106,21,.4)"/><stop offset="1" stop-color="rgba(242,106,21,0)"/></linearGradient></defs>
+      ${[70,80,90,100].map(v=>`<line x1="${P}" y1="${ys(v)}" x2="${W-P}" y2="${ys(v)}" stroke="#26324a" stroke-dasharray="3 4"/>
+      <text x="4" y="${ys(v)+3}" fill="#64748B" font-size="8">${v}kg</text>`).join('')}
+      <path d="${area}" fill="url(#ar)"/>
+      <path d="${path}" fill="none" stroke="url(#lg2)" stroke-width="2.5" stroke-linecap="round"/>
+      <defs><linearGradient id="lg2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F97316"/><stop offset="1" stop-color="#EF4444"/></linearGradient></defs>
+      ${pts.map((p,i)=>`<circle cx="${xs(i)}" cy="${ys(p.v)}" r="${i===pts.length-1?4.5:2.5}" fill="${i===pts.length-1?'#FDBA74':'#F97316'}"/>`).join('')}
+      <text x="${xs(pts.length-1)-30}" y="${ys(pts[pts.length-1].v)-8}" fill="#FDBA74" font-size="9" font-weight="700">93kg 🏅PR</text>
+      ${pts.map((p,i)=>i%2===0?`<text x="${xs(i)}" y="${H-8}" fill="#64748B" font-size="7" text-anchor="middle">${p.w}</text>`:'').join('')}
+    </svg>
+  </div>
+  <div class="stat3">
+    <div class="s"><b>93<small>kg</small></b><span>当前 e1RM</span><div class="up">▲ 8 周累计 +31%</div></div>
+    <div class="s"><b>50kg</b><span>最重 5×5</span><div class="up">▲ 09-02 新PR</div></div>
+    <div class="s"><b>—</b><span>同比去年</span><div style="color:var(--dim);font-size:9px">数据不足 1 年</div></div>
+  </div>
+  <div class="sec-cap">历史记录（最近）</div>
+  <div class="card" style="padding:6px 16px">
+    ${[['09-06','50kg×5×5','全完成 → 建议下次 +2.5'],['09-02','50kg×5×5','首次破 50 🏁'],['08-29','47.5kg×5×5','全完成'],['08-26','47.5kg×5×4,4','末组失败@4 → 标记']].map(r=>`
+    <div class="prline"><span style="color:var(--dim);width:44px">${r[0]}</span><span class="grow mono" style="font-size:12px">${r[1]}</span><span style="font-size:10px;color:var(--sub)">${r[2]}</span></div>`).join('')}
+  </div>
+  <div class="src">同比数据不足 1 年 → 诚实显示「—」（两档渲染原则） ｜ 换动作：搜索框选其他动作</div>`;
+}
+function trendBind(){}
+/* ================================================================
+   P11 我的（A 层 + 工具箱）
+================================================================ */
+function pMe(){
+  const me=(icon,title,meta,arrow,soon)=>`
+  <div class="merow ${soon?'soon':''}">
+    <div class="ic">${icon}</div>
+    <div class="grow"><h5>${title}${soon?' <span class="badge plain">二批</span>':''}</h5><div class="meta">${meta}</div></div>
+    <span class="arr">${arrow||'›'}</span>
+  </div>`;
+  return `
+  <div class="c-head">
+    <div class="hi">我的 · 本地数据（数据仅存本机）</div>
+    <h1>我的</h1>
+  </div>
+  <div class="sec-cap">计划与目标</div>
+  <div class="merow" data-go="7">
+    <div class="ic">📅</div>
+    <div class="grow"><h5>我的计划</h5><div class="meta">PT_001 进行中 · 第5/12周 ｜ 13 套系统模板 + 7 套达人模板</div></div>
+    <span class="arr">›</span>
+  </div>
+  ${me('🎯','目标重填（轻问卷）','增肌 · 初学者 · 健身房 · 3练/周 → 重新匹配计划')}
+  ${me('⚙️','设置','单位 kg（可切 lb）｜ 组间提醒：震动+提示音开｜默认休息 随目标分级')}
+  ${me('📤','数据导出','JSON / CSV（迁移桥，随时带走）')}
+  ${me('ⓘ','关于与版权声明','内容为事实性数据+改写文字 ｜ 书目见知识来源列表')}
+  <div class="sec-cap">工具箱（首批）</div>
+  <div class="calc" id="calc1rm">
+    <b style="font-size:13px">1RM 计算器（Epley）</b>
+    <div class="row" style="margin-top:10px;gap:8px">
+      <input id="cw" placeholder="重量 kg" inputmode="decimal">
+      <input id="cr" placeholder="次数" inputmode="numeric">
+    </div>
+    <div class="out" id="cout">—</div>
+    <div style="font-size:10px;color:var(--dim);text-align:center">95%≈<span id="c95">—</span> ｜ 90%≈<span id="c90">—</span> ｜ 80%≈<span id="c80">—</span> ｜ 70%≈<span id="c70">—</span></div>
+  </div>
+  <div class="calc">
+    <b style="font-size:13px">杠铃片配重计算器</b>
+    <div class="row" style="margin-top:10px;gap:8px">
+      <input id="pw" placeholder="目标总重 kg" inputmode="decimal">
+      <span class="chip on" style="cursor:default">奥杆 20kg</span>
+    </div>
+    <div class="plates" id="plates"></div>
+    <div style="font-size:10px;color:var(--dim);text-align:center;margin-top:6px" id="pnote">输入重量自动算两侧片（取最少片数方案）</div>
+  </div>
+  <div class="sec-cap">二批预留（入口预留 · 灰显）</div>
+  ${me('⚖️','身体数据','体重 / 围度记录 + 趋势线','›',true)}
+  ${me('📷','体态照片对比','正面/侧面/背面 · 本地相册管理','›',true)}
+  <div class="src">语言设置不画（v1 仅中文）｜ RPE 参考表并入执行页 ｜ 独立计时器不做（执行页已有）</div>
+  <div style="height:8px"></div>`;
+}
+function meBind(){
+  const calc=()=>{
+    const w=parseFloat($('cw').value),r=parseInt($('cr').value,10);
+    if(!(w>0&&r>0))return;
+    const orm=w*(1+r/30);
+    $('cout').textContent=orm.toFixed(1)+' kg';
+    [['c95',.95],['c90',.90],['c80',.80],['c70',.70]].forEach(([id,f])=>{$(id).textContent=(orm*f).toFixed(1);});
+  };
+  if($('cw')){$('cw').oninput=calc;$('cr').oninput=calc;}
+  if($('pw')){$('pw').oninput=()=>{
+    const target=parseFloat($('pw').value);
+    const box=$('plates');box.innerHTML='';
+    if(!(target>=25)){return;}
+    let per=(target-20)/2; /* 每侧 */
+    const den=[25,20,15,10,5,2.5,1.25];
+    const colors={25:'#EF4444',20:'#3B82F6',15:'#FDF2E9',10:'#22C55E',5:'#FDF2E9',2.5:'#94A3B8',1.25:'#94A3B8'};
+    let out=[];
+    den.forEach(d=>{while(per>=d-0.01){out.push(d);per=+(per-d).toFixed(2);}});
+    out.slice(0,12).forEach(d=>{
+      const i=document.createElement('i');
+      i.style.borderColor=colors[d];i.style.color=d===15||d===5?'#111':'#fff';
+      i.textContent=d;box.appendChild(i);});
+    $('pnote').textContent=`每侧 ${out.join(' + ')} kg（${out.length} 片/侧）`;
+  };}
+}
+/* ================================================================
+   P12 AI 问答（v1.7 · 预设问答库首批 + AI 计划生成二批演示态）
+================================================================ */
+let aiTab='faq',aiCat='全部';
+const FAQS=[
+  {cat:'训练原理',q:'深蹲时膝盖可以超过脚尖吗？',
+   a:'可以，膝盖前移是深蹲的正常力学，追求「不过脚尖」反而有害。',
+   why:'①低杠深蹲中膝盖保持相对靠后、以髋部发力为主，但胫骨仍会前移；②强制膝盖不过脚尖会导致过度前倾、增加下背负荷；③髌骨肌腱炎多因蹲得太浅+重心错误，而非膝盖过尖。',
+   cond:'适用：健康成年人常规深蹲训练；膝术后/膝痛急性期遵医嘱。',
+   ev:[['L3','书籍 RAG'],['L1','指南/教材']],
+   src:'《力量训练基础》第2章 · RAG 命中 0.713 → 跳转知识卡'},
+  {cat:'参数依据',q:'增肌组间休息多久合适？',
+   a:'增肌目标建议 60-90 秒（复合大动作可至 2 分钟），力量目标 2-3 分钟。',
+   why:'①增肌 60-80%1RM×8-12 次×2-4 组×休息 60-90s（T2 参数规则）；②完全恢复不在几分钟内发生，力量训练超 2 分钟休息是必要而非懈怠。',
+   cond:'适用：普通增肌者；代谢压力型训练可更短。',
+   ev:[['L2','结构化表'],['L3','书籍 RAG']],
+   src:'T2 training_params · 《ACSM运动处方指南》3.2 → 跳转参数表'},
+  {cat:'执行技巧',q:'新手练背找不到发力感怎么办？',
+   a:'先用轻重量做「肩胛先动」激活，再上正式重量；想象用肘部划向髋部。',
+   why:'①用稳定动作、目标肌群受力和可重复负荷判断动作质量（执行层原则）；②正式组前做弹力带肩胛后缩激活 1-2 组×15 次。',
+   cond:'适用：新手前 8 周动作学习期；有放射痛/麻木则停（红旗）。',
+   ev:[['L4','达人执行层'],['L2','结构化表']],
+   src:'蒸馏卡#1 谭成义·B站公开内容（MIT 语料）+ T5 背部拉伸关联'}
+];
+function pAI(){
+  const evb=evs=>evs.map(e=>`<span class="badge ${e[0]==='L4'?'plain':'hl'}" style="font-size:9px;margin-right:4px">${e[0]} ${e[1]}</span>`).join('');
+  return `
+  <div class="c-head">
+    <div class="hi">问教练 · 严格接地（v1.7 · PRD 5.7）</div>
+    <h1>AI 教练</h1>
+    <div class="sub">回答只来自知识库（13 本书 + T1-T7 + 25 张达人蒸馏卡）｜ 拒答不编造 ｜ 免费</div>
+  </div>
+  <div class="tier-switch">
+    <button class="${aiTab==='faq'?'on':''}" data-aitab="faq">问答库 · 首批（离线 50-100 条）</button>
+    <button class="${aiTab==='plan'?'on':''}" data-aitab="plan">AI 计划生成 · 二批演示态</button>
+  </div>
+  ${aiTab==='faq'?`
+  <div class="frow" style="overflow-x:auto">${['膝盖超脚尖?','组间休息多久?','练背没发力感','训练前拉伸吗','蛋白粉怎么喝','平台期怎么办'].map(q=>`<span class="chip" data-aiq="${q}" style="flex:none">${q}</span>`).join('')}</div>
+  <div class="frow">${['全部','训练原理','参数依据','拉伸恢复','营养','执行技巧'].map(c=>`<span class="chip ${aiCat===c?'on':''}" data-aicat="${c}">${c}</span>`).join('')}</div>
+  <div id="aiDialog"></div>
+  ${FAQS.filter(f=>aiCat==='全部'||f.cat===aiCat).map(f=>`
+  <div class="card" style="padding:14px 16px" data-toggle>
+    <b style="font-size:14px">${f.q}</b>
+    <div class="excbody"><div class="in" style="padding-top:10px">
+      <div style="font-size:13px;font-weight:700;color:var(--ink);line-height:1.7">${f.a}</div>
+      <div class="sec" style="margin-top:8px"><b class="cap">依据</b><p style="font-size:11px;line-height:1.8">${f.why}</p></div>
+      <div class="sec"><b class="cap">适用条件</b><p style="font-size:11px">${f.cond}</p></div>
+      <div style="margin-top:8px">${evb(f.ev)}</div>
+      <div class="src" style="margin:6px 0 0">${f.src}</div>
+    </div></div>
+  </div>`).join('')}
+  <div class="card" style="padding:14px 16px;border-color:rgba(240,72,62,.35);background:rgba(240,72,62,.06)">
+    <b style="font-size:14px">❌ 拒答示例：「左膝内侧刺痛两周了还能练腿吗？」</b>
+    <div style="font-size:12px;color:var(--sub);line-height:1.8;margin-top:6px">当前知识库没有足够依据回答这个问题——疼痛/伤病类不诊断不处方。<br>→ 转结构化方案：膝部疼痛方案（排除清单核验）｜ ⚠ 出现肿胀/麻木/外伤 → 就医引导</div>
+    <div class="src" style="margin:8px 0 0">拒答三态：✅命中（带书目来源）/ ⚠️部分命中（明示缺口）/ ❌未命中（固定话术+相邻推荐）——禁止编造</div>
+  </div>
+  <div class="card" style="padding:12px 16px;font-size:11px;color:var(--sub);line-height:1.8">
+    <b style="color:var(--warn)">🚩 安全红旗（对话前置分流）</b>：胸痛/明显气短/晕厥先兆/进行性麻木/急性外伤/近期手术 → 固定安全卡（停止生成训练建议+就医），任何提问先过此门
+  </div>
+  <div class="src">四层证据：🏛L1 指南 → 📊L2 结构化表 → 📚L3 书籍 RAG → 🎯L4 达人卡（冲突上层覆盖，名气不提高等级）｜ 入口：训练 Tab 顶卡 / 动作详情「就此问问」/ 疼痛方案页</div>
+  <div style="position:sticky;bottom:64px;background:var(--bg);border-top:1px solid var(--line);padding:8px 14px;display:flex;gap:8px;align-items:center">
+    <input id="aiInput" placeholder="问教练任何问题，如：增肌每组做几次？首批将匹配问答库回答" style="flex:1;background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:10px 14px;color:var(--ink);font-size:12px;outline:none">
+    <button id="aiSend" style="flex:none;width:40px;height:40px;border-radius:50%;border:none;background:linear-gradient(140deg,#8B5CF6,#0EA5E9);color:#fff;font-size:15px;cursor:pointer">↑</button>
+  </div>`
+  :`
+  <div class="card" style="padding:14px 16px;font-size:13px;line-height:1.8">
+    <div style="display:flex;gap:8px;margin-bottom:10px"><span style="flex:none;width:26px;height:26px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:12px">🧑</span>
+    <div class="grow" style="background:var(--card2);border-radius:4px 14px 14px 14px;padding:8px 12px">帮我安排一个 12 周的增肌计划，家里只有一对哑铃</div></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px"><span style="flex:none;width:26px;height:26px;border-radius:8px;background:linear-gradient(140deg,#8B5CF6,#0EA5E9);display:flex;align-items:center;justify-content:center;font-size:12px">🤖</span>
+    <div class="grow" style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:4px 14px 14px 14px;padding:8px 12px">
+      信息充分度 <b>ask</b>（还差 1 个会改变结构的问题）：<b>每周能练几天？</b>
+      <div style="font-size:10px;color:var(--dim);margin-top:4px">非关键缺口采用保守假设并明示，不把普通请求变成长问卷</div></div></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px"><span style="flex:none;width:26px;height:26px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:12px">🧑</span>
+    <div class="grow" style="background:var(--card2);border-radius:4px 14px 14px 14px;padding:8px 12px">3 天</div></div>
+  </div>
+  <div class="sugcard" style="background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.4)">
+    <div class="cap" style="color:#c4b5fd"><i style="background:#8B5CF6;box-shadow:0 0 8px #8B5CF6"></i>生成计划卡（规则定骨架 · LLM 只在约束空间内适配）</div>
+    <div class="sug-row"><div class="delta" style="flex:1"><b>骨架</b>：PT_002 中阶上下分化·波浪周期（12周）——目标×水平×3天 命中 <span class="badge hl" style="font-size:9px">L2 T3 模板</span></div></div>
+    <div class="sug-row" style="border-top:none"><div class="delta" style="flex:1"><b>适配</b>：杠铃卧推→哑铃卧推（substitutes 直连·同肌群）｜ 深蹲→高脚杯哑铃蹲 ｜ 引体→哑铃划船 <span class="badge hl" style="font-size:9px">L2 T1 substitutes</span></div></div>
+    <div class="sug-row" style="border-top:none"><div class="delta" style="flex:1"><b>参数</b>：60-80%1RM×8-12次×休息60-90s（居家哑铃按 RPE 7-9 校准）<span class="badge hl" style="font-size:9px">L2 T2 规则</span></div></div>
+    <div class="sug-row" style="border-top:none"><div class="delta" style="flex:1"><b>解释</b>：3 天/周上下分化对增肌新手频率与恢复最优（《ACSM》每肌群 2-3 天/周）<span class="badge plain" style="font-size:9px">L1 指南</span></div></div>
+    <div class="thumbbar" style="padding:0;margin-top:10px">
+      <button class="ghost" data-ai-save="计划">存入我的计划</button>
+      <button class="main" data-ai-save="模板">存为模板</button>
+    </div>
+    <div style="font-size:9px;color:#8a7bb0;margin-top:8px">重量与阶段决策走确定性规则（可审计），模型只做解释与交互 ｜ 生成物直接落 4.2.5 模板体系复用 ｜ 本页为二批云函数解锁后的演示态</div>
+  </div>
+  <div class="src">首批交付：预设问答库（离线内置零 AI 调用）｜ 二批解锁：微信云函数=LLM 网关+RAG v4（8115+100 块云端一份）——「无自建服务器」语义不变（SRS 9.4）</div>`}
+  <div style="height:8px"></div>`;
+}
+function aiBind(){
+  document.querySelectorAll('[data-aitab]').forEach(b=>{b.onclick=()=>{aiTab=b.dataset.aitab;render();};});
+  document.querySelectorAll('[data-aicat]').forEach(c=>{c.onclick=()=>{aiCat=c.dataset.aicat;render();};});
+  document.querySelectorAll('[data-ai-save]').forEach(b=>{b.onclick=()=>{
+    const t=document.createElement('div');t.dataset.overlay='1';
+    t.innerHTML=`<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:62;background:var(--card);border:1px solid var(--line);color:var(--ink);font-size:13px;font-weight:700;padding:14px 22px;border-radius:16px">已存入我的${b.dataset.aiSave} ✓（演示）</div>`;
+    $('screen').appendChild(t);setTimeout(()=>t.remove(),1500);};});
+  /* 预设问题 chip：填入输入框并发送 */
+  document.querySelectorAll('[data-aiq]').forEach(c=>{c.onclick=()=>{if($('aiInput')){$('aiInput').value=c.dataset.aiq;sendAI();}};});
+  const bubble=(who,html)=>`
+  <div style="display:flex;gap:8px;margin:0 14px 10px"><span style="flex:none;width:26px;height:26px;border-radius:8px;${who==='me'?'background:var(--card2)':'background:linear-gradient(140deg,#8B5CF6,#0EA5E9)'};display:flex;align-items:center;justify-content:center;font-size:12px">${who==='me'?'🧑':'🤖'}</span>
+  <div class="grow" style="${who==='me'?'background:var(--card2);border-radius:4px 14px 14px 14px':'background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:4px 14px 14px 14px'};padding:10px 12px;font-size:12px;line-height:1.8">${html}</div></div>`;
+  window.sendAI=()=>{
+    const inp=$('aiInput'),box=$('aiDialog');if(!inp||!box||!inp.value.trim())return;
+    const q=inp.value.trim();inp.value='';
+    const hit=/膝盖|脚尖/.test(q)?FAQS[0]:/休息|组间/.test(q)?FAQS[1]:/发力|练背|背/.test(q)?FAQS[2]:null;
+    box.innerHTML=bubble('me',q)+bubble('ai',hit
+      ?`<b>${hit.a}</b><br><span style="color:var(--sub);font-size:11px">依据：${hit.why.split('；')[0]}…</span><br><span style="font-size:10px;color:#FDBA74">${hit.ev.map(e=>'['+e[0]+']').join(' ')} ${hit.src}</span><br><span style="font-size:10px;color:#7DD3FC">↑ 完整四段回答见下方问答库（已命中预设库 · 离线）</span>`
+      :`<b style="color:var(--warn)">当前知识库没有足够依据回答这个问题。</b><br><span style="color:var(--sub);font-size:11px">首批=离线问答库匹配（拒答不编造）；二批云函数解锁 RAG 检索自由提问。试试：膝盖超脚尖？/ 组间休息多久？</span>`);
+    box.scrollIntoView({behavior:'smooth',block:'center'});};
+  if($('aiSend'))$('aiSend').onclick=()=>sendAI();
+  if($('aiInput'))$('aiInput').onkeydown=e=>{if(e.key==='Enter')sendAI();};
+}
+/* ================================================================
+   P13 模板详情（v1.7 · 用户自定义模板）
+================================================================ */
+function pTpl(){
+  const rows=[
+    ['杠铃卧推（主项）','热身15 + 3组 12→10→8','RPE8 留2次余量；递进：次数压缩→4×8→2×6→6次组渐进，最后才加重'],
+    ['哑铃上斜卧推','4×12','留2-3次余量；后期最多2组力竭'],
+    ['双杠臂屈伸（可退阶跪姿）','4×12 或到力竭','远固定动作，肩胛开发'],
+    ['仰卧杠铃臂屈伸','4×15','留2次余量；月度疲劳后换绳索下压（肩伸位）'],
+    ['Y字侧平举','3×(10+10)','10次歇5秒再10次；孤立动作到力竭（30-35%区间）']];
+  return `
+  <div class="c-head">
+    <div class="hi">达人模板 CD_001 · 部位：胸+肩+三头 · 整理自公开教学内容</div>
+    <h1>凯圣王×谭成义 · 胸肩三头日</h1>
+    <div class="sub">属「2026版三分化」Day 1（来源 BV1FcdZBNEm3 · 14.9万播放）｜ 同系列另两日：背二头日 CD_002 · 下肢后侧日 CD_003</div>
+  </div>
+  <div class="card" style="padding:12px 16px;background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.4)">
+    <b style="font-size:12px;color:#c4b5fd">⚡ 复制为「我的模板」= 打开即智能预填（PRD 5.6.6）</b>
+    <div style="font-size:11px;color:#CBD5E1;line-height:1.8;margin-top:4px">复制后每次开练：① 加重引擎前置预填（达标 +2.5/5kg、连败 -10%、无历史用参考区间）② 练后拉伸按当日肌群 T5 动态刷新（胸大肌 ST_006 + 肱三头 ST_020）③ 动作/组次自由改</div>
+  </div>
+  ${rows.map((x,i)=>`
+  <div class="card" style="padding:12px 16px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="exc idx" style="margin:0;width:30px;height:30px;border-radius:10px;font-size:12px">${i+1}</div>
+      <b style="font-size:13px" class="grow">${x[0]}</b>
+      <span class="badge plain mono">${x[1]}</span>
+    </div>
+    <div style="font-size:11px;margin-top:5px;color:var(--sub);line-height:1.7">${x[2]}</div>
+  </div>`).join('')}
+  <div class="card" style="padding:12px 16px;border-color:rgba(242,106,21,.4);background:linear-gradient(160deg,rgba(242,106,21,.1),var(--card))">
+    <b style="font-size:12px;color:var(--gold)">方法论要点（随模板携带）</b>
+    <div style="font-size:11px;color:#CBD5E1;line-height:1.9;margin-top:4px">· 力竭取舍：复合大重量<b>不力竭</b>（RPE8 管神经疲劳），孤立轻重量<b>到力竭</b>（募集白肌）<br>· 卧推主项=上肢推力能力筛查（触胸时肩悬前/胸椎活动度/肩胛后缩问题在此暴露）<br>· 不用史密斯替代自由卧推（容错率高反学不会动作模式）</div>
+  </div>
+  <div class="thumbbar">
+    <button class="ghost" data-go="7">同系列另两日 →</button>
+    <button class="main" data-go="6">复制为我的模板 → 开练</button>
+  </div>
+  <div class="src">模板粒度=单训练日（11 个 CD 达人单日模板）｜ 整套数据保留 CT_XXX（parent 指针）供周期计划生成 ｜ 「复制为我的模板」后与用户模板同权</div>
+  <div style="height:8px"></div>`;
+}
+function tplBind(){
+  document.querySelectorAll('[data-tpl-mg]').forEach(b=>{b.onclick=()=>{
+    const t=document.createElement('div');t.dataset.overlay='1';
+    t.innerHTML=`<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:62;background:var(--card);border:1px solid var(--line);color:var(--ink);font-size:13px;font-weight:700;padding:14px 22px;border-radius:16px">模板管理（编辑/复制/删除/排序）· 演示</div>`;
+    $('screen').appendChild(t);setTimeout(()=>t.remove(),1400);};});
+}
+/* ================================================================
+   初始化
+================================================================ */
+parseURL();syncURL();render();
+</script>
+</body>
+</html>
