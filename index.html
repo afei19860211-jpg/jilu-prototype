@@ -855,10 +855,10 @@ function pRun(){
   const it=TODAY.items[0];
   /* 训记式组行：重量×次数双输入可改 + 完成打勾（v1.7 修订：模板只是预填，组/次/重训练中全部可改） */
   /* v3 简化（用户反馈）：删 ± 步进与 1RM% 参考列——点数字直接输入，一行=组号+重量+次数+完成 */
-  const setRow=(i,type,side,failed,drop,w,reps,segs,done,cur)=>`
+  const setRow=(i,type,side,failed,drop,w,reps,segs,done,cur,snap)=>`
   <div class="setrow ${type==='warm'?'warm':''} ${cur?'cur':''}">
     <span class="sn">${type==='warm'?'热身':'组 '+i}${type==='warm'?'<span class="t">WARMUP</span>':side?'<span class="t">'+side+' 侧</span>':''}${cur?'<span class="t" style="color:var(--acc1)">▶ 当前</span>':''}</span>
-    <input value="${w}" inputmode="decimal"><span class="u">kg</span>
+    <input value="${w}" inputmode="decimal"><span class="u">kg</span>${snap?`<span class="badge" style="flex:none;background:rgba(16,185,129,.13);color:#34d399;border-color:rgba(16,185,129,.35)">≈${snap}</span>`:''}
     <span class="u">×</span>
     ${segs?`<span class="badge hl mono" style="flex:none">12+8+6</span><span style="font-size:10px;color:var(--dim);flex:none;line-height:1.4">Drop Set<br>50/45/40</span>`
       :`<input value="${reps}" inputmode="numeric" style="width:40px"><span class="u">次</span>`}
@@ -883,6 +883,7 @@ function pRun(){
   </div>
   <div class="card" style="padding:12px 14px;font-size:11px;color:var(--sub);line-height:1.8">
     <b style="color:#c4b5fd">⚙ 序列生成器（v1.7 · PRD 5.10.1）</b>：金字塔递增 <span class="mono">45→50→55</span>（等差+2.5 片重取整）｜ 递减 <span class="mono">60→55→50</span>（-10% 步进，<b>首批</b>自动）｜ 平直（LP 常用）——输入首末重量一键填充各组，每组仍可独立改
+    <br><b style="color:#34d399">🏋 器材库吸附（v1.7.3 · PRD 5.10.1 四件套）</b>：改任意重量确认时弹<b>作用域</b>（仅今天/整个计划，试试点重量）｜ 哑铃动作自动吸附你拥有的档位（演示见单侧组绿色徽标）｜ 序列取整=「我的器材」最小片重（默认 2.5kg）
   </div>
   ${setRow(1,'warm','',null,0,20,5,null,1)}
   ${setRow(2,'work','',null,0,45,5,null,1)}
@@ -890,8 +891,8 @@ function pRun(){
   ${setRow(4,'work','',3,0,50,6,null,0,1)}
   ${setRow(5,'work','',null,1,60,5,null,0)}
   ${setRow(6,'work','',null,0,50,0,'segs',0)}
-  ${setRow(7,'work','L',null,0,12,10,null,0)}
-  ${setRow(8,'work','R',null,0,12,10,null,1)}
+  ${setRow(7,'work','L',null,0,12,10,null,0,0,'你有12kg档')}
+  ${setRow(8,'work','R',null,0,12,10,null,1,0,'你有12kg档')}
   <div class="src">训记式自由记录（PRD 5.10.1/5.10.2 · v1.7 修订）：模板参数只是<b>预填</b>——训练中每组重量/次数直接改（± 或点数字输入），加减组随意（上方按钮），打勾即弹计时 ｜ 热身灰区不计加重 ｜ 递增/递减一键序列 ｜ 递减自动序列首批 ｜ Drop Set 分段各段独立重量 ｜ 单侧分列</div>
   <div class="bigrest" id="restBox" style="display:${restOn?'block':'none'}">
     <div class="lab"><span>组间休息 · 到时震动+提示音</span><span class="chip" id="rSkip" style="border-color:#475569">跳过</span></div>
@@ -919,7 +920,10 @@ function pRun(){
   <div style="height:8px"></div>`;
 }
 function runBind(){
-  /* ± 步进已删（v3 简化）：点数字直接输入 */
+  /* ± 步进已删（v3 简化）：点数字直接输入；改重量确认 → 作用域 sheet（v1.7.3） */
+  document.querySelectorAll('.setrow input[inputmode="decimal"]').forEach(inp=>{
+    inp.onchange=()=>showScopeSheet(inp.value);
+  });
   /* 计时（打勾即弹，startRest 统一入口） */
   const total=180;let left=total,run=false;
   const num=$('rNum');
@@ -1086,6 +1090,15 @@ function endTraining(){
         </div>
       </div>
       <div style="height:12px"></div>
+      <div class="sec"><b class="cap">下次预习（v1.7.3 · 训记 PreviewNext 同构 · 读模板 blocks 三段）</b></div>
+      <div style="background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:13px 15px;font-size:11px;line-height:1.9">
+        <b style="font-size:12.5px">下次：背二头日 · 凯圣王×谭成义三分化 Day2</b>（2 天后）
+        <div style="margin-top:4px"><span class="badge" style="background:rgba(56,189,248,.12);color:#7dd3fc;border-color:rgba(56,189,248,.35)">热身 6 项</span> 上肢拉日热身（肩胛激活/背阔激活…，10-15min）</div>
+        <div><span class="badge" style="background:rgba(249,115,22,.12);color:#fdba74;border-color:rgba(249,115,22,.35)">正式 5 动作</span> 单臂钢线下拉 → 对握下拉 → 单手器械划船 → 开肘划船 → 钢线弯举</div>
+        <div><span class="badge" style="background:rgba(52,211,153,.12);color:#34d399;border-color:rgba(52,211,153,.35)">拉伸 5 项</span> 背阔(跪姿)/中下斜方/肩胛提肌/肱二头…（T5 st_id 动态刷新）</div>
+        <span style="color:var(--dim);font-size:10px">CT v3.0 blocks 数据 · 计划末周自动切「周期衔接卡」（PRD 5.6.5）</span>
+      </div>
+      <div style="height:12px"></div>
       <div class="thumbbar" style="padding:0">
         <button class="ghost" data-save>保存图片</button>
         <button class="main" data-share>分享</button>
@@ -1104,6 +1117,31 @@ function showPRToast(){
   const t=document.createElement('div');t.dataset.overlay='1';
   t.innerHTML=`<div style="position:absolute;top:64px;left:50%;transform:translateX(-50%);z-index:61;background:linear-gradient(90deg,#F97316,#DB2777);color:#fff;font-weight:900;font-size:13px;padding:12px 20px;border-radius:16px;box-shadow:0 12px 28px rgba(219,39,119,.45)">🏅 新PR！最重 5×5 @50kg（e1RM 93kg 新高）</div>`;
   $('screen').appendChild(t);setTimeout(()=>t.remove(),2200);
+}
+/* 修改作用域 sheet（v1.7.3 · PRD 5.6.4：改参数显式选「仅今天/整个计划」） */
+function showScopeSheet(val){
+  const ov=document.createElement('div');ov.dataset.overlay='1';
+  ov.innerHTML=`
+  <div class="backdrop" data-sc-close></div>
+  <div class="sheet" style="z-index:52">
+    <div class="grip"></div>
+    <div class="sh-h"><h3>修改作用域</h3><button class="sh-x" data-sc-close>关闭</button></div>
+    <div class="sh-b" style="font-size:12px;line-height:1.8">
+      <p style="color:var(--sub)">本次改动：<b class="mono" style="color:var(--ink)">重量 → ${val||'—'} kg</b>，应用到？<br><span style="font-size:10px;color:var(--dim)">训练记录不受影响（无论选哪个）</span></p>
+      <div class="merow" data-scope="today" style="margin:0 0 8px">
+        <div class="ic" style="background:linear-gradient(140deg,#F97316,#FB7185)">今</div>
+        <div><h5>仅今天 <span class="badge" style="background:rgba(249,115,22,.12);color:#fdba74;border-color:rgba(249,115,22,.35)">默认</span></h5><div class="meta">只写入本次训练实例——今天状态差时临时降重量，计划不受影响</div></div>
+      </div>
+      <div class="merow" data-scope="plan" style="margin:0">
+        <div class="ic" style="background:linear-gradient(140deg,#38bdf8,#818cf8)">划</div>
+        <div><h5>整个计划</h5><div class="meta">写入计划实例后续所有训练日（不回写模板）——换片体系/长期调整时用</div></div>
+      </div>
+      <p style="color:var(--dim);font-size:10px;margin-top:10px">v1.7.3 · 训记 RE 实证「仅更改今天的计划」同构（PRD 5.6.4 · 实例不回写原则不变，交互显性化）</p>
+    </div>
+  </div>`;
+  $('screen').appendChild(ov);
+  ov.querySelectorAll('[data-sc-close]').forEach(b=>b.onclick=()=>ov.remove());
+  ov.querySelectorAll('[data-scope]').forEach(r=>r.onclick=()=>{ov.remove();showPRToast();});
 }
 function openSheet(){  /* 计时保持运行 */
   const ov=document.createElement('div');ov.dataset.overlay='1';
@@ -1444,6 +1482,15 @@ function pMe(){
     <div class="plates" id="plates"></div>
     <div style="font-size:10px;color:var(--dim);text-align:center;margin-top:6px" id="pnote">输入重量自动算两侧片（取最少片数方案）</div>
   </div>
+  <div class="calc" style="border-color:rgba(16,185,129,.35)">
+    <b style="font-size:13px">我的器材 <span class="badge" style="background:rgba(52,211,153,.12);color:#34d399;border-color:rgba(52,211,153,.35)">v1.7.3</span></b>
+    <div style="font-size:10px;color:var(--sub);margin-top:6px">哑铃档位（勾选你拥有的）</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px" id="dbChips">
+      ${[2.5,5,7.5,10,12,15,17.5,20,22,24].map(k=>`<span class="chip ${[2.5,5,7.5,10,12,15,20].includes(k)?'on':''}" data-db="${k}" style="cursor:pointer">${k}kg</span>`).join('')}
+    </div>
+    <div style="font-size:10px;color:var(--sub);margin-top:10px">杠铃片（25×2 / 20×2 / 15×2 / 10×2 / 5×2 / 2.5×2 ✎）｜ 杆重：奥杆 20 · 直杆 10 · EZ 杆 8 ✎</div>
+    <div style="font-size:10px;color:var(--dim);margin-top:8px;line-height:1.7">配重计算器与执行页共用此配置：哑铃动作重量<b style="color:#34d399">自动吸附到拥有档位</b>（输入 12.5 → 提示 ≈12kg）｜ 递增/递减序列取整粒度=最小拥有片重（训记 RE 实证同构，PRD 5.10.1/5.12）</div>
+  </div>
   <div class="sec-cap">二批预留（入口预留 · 灰显）</div>
   ${me('⚖️','身体数据','体重 / 围度记录 + 趋势线','›',true)}
   ${me('📷','体态照片对比','正面/侧面/背面 · 本地相册管理','›',true)}
@@ -1459,6 +1506,7 @@ function meBind(){
     [['c95',.95],['c90',.90],['c80',.80],['c70',.70]].forEach(([id,f])=>{$(id).textContent=(orm*f).toFixed(1);});
   };
   if($('cw')){$('cw').oninput=calc;$('cr').oninput=calc;}
+  document.querySelectorAll('#dbChips .chip').forEach(c=>c.onclick=()=>c.classList.toggle('on'));
   if($('pw')){$('pw').oninput=()=>{
     const target=parseFloat($('pw').value);
     const box=$('plates');box.innerHTML='';
