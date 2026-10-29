@@ -533,7 +533,13 @@ function pHome(){
     <div class="streak" style="background:conic-gradient(#fff calc(2/14*360deg),rgba(255,255,255,.25) 0)"><div><b class="mono">2/14</b><span>今日进度</span></div></div>
     <span class="tag" data-go="8" style="cursor:pointer">PT_001 新手线性周期 · 肥大期 ›</span>
     <h3>${t.focus}</h3>
-    <div class="sub2">4 动作 · 台阶式 3:1 加重 · 预计 55 分钟 · 第12周减载测试</div>
+    <div class="sub2" style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 2px">
+      <span style="background:rgba(56,189,248,.3);border-radius:6px;padding:2px 7px;font-size:10px">热身 6 项</span><span style="opacity:.7">→</span>
+      <span style="background:rgba(249,115,22,.3);border-radius:6px;padding:2px 7px;font-size:10px">4 动作</span><span style="opacity:.7">→</span>
+      <span style="background:rgba(52,211,153,.3);border-radius:6px;padding:2px 7px;font-size:10px">拉伸 4 项</span>
+      <span style="font-size:10px;opacity:.85;align-self:center">三段课表（v1.7.4 热身=具体动作）</span>
+    </div>
+    <div class="sub2">台阶式 3:1 加重 · 预计 55 分钟 · 第12周减载测试</div>
     <div class="stats">
       <div><b>4</b><span>动作</span></div><div><b>14</b><span>总组数</span></div>
       <div><b>≈3,708<small>kg</small></b><span>预计总容量</span></div><div><b>2</b><span>已完成组</span></div>
@@ -545,6 +551,20 @@ function pHome(){
     <div class="grow"><b style="font-size:13px">问教练 · AI 问答</b>
     <div style="font-size:10px;color:var(--sub);margin-top:2px">预设问答库离线内置（v1.7 首批）· 四层证据 · 拒答不编造 · 免费无限制</div></div>
     <span style="color:#c4b5fd">›</span>
+  </div>
+  <div class="card" style="padding:12px 16px;border-color:rgba(16,185,129,.4);background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(14,165,233,.04))">
+    <div style="display:flex;align-items:center;gap:8px">
+      <b style="font-size:13px">🧘 今日身体开发 <span class="badge" style="background:rgba(52,211,153,.12);color:#34d399;border-color:rgba(52,211,153,.35)">v1.7.4</span></b>
+      <span style="margin-left:auto;font-size:10px;color:var(--dim);cursor:pointer">⏰ 提醒 21:00 · 设置</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      ${[['日本坐','60s','✓'],['青蛙趴','90s','✓'],['靠墙深蹲','45s ×2','▶ 今日'],['俯卧撑','×15','—']].map(x=>`
+      <div style="background:var(--card2);border:1px solid ${x[2]==='✓'?'rgba(34,197,94,.4)':'var(--line)'};border-radius:12px;padding:8px 12px">
+        <div style="font-size:12px;font-weight:700">${x[0]} <span style="color:${x[2]==='✓'?'#4ADE80':'var(--dim)'};font-size:10px">${x[2]}</span></div>
+        <div style="font-size:10px;color:var(--dim)">${x[1]}</div>
+      </div>`).join('')}
+    </div>
+    <div style="font-size:10px;color:var(--sub);margin-top:8px;line-height:1.7">不依附训练日的 5-8 分钟身体维护（日本坐=踝+髋内旋 / 青蛙趴=内收肌活动度…）——按昨日训练部位推荐恢复向条目 ｜ T8 daily 12 条 ｜ 无 streak 压力（PRD 5.2.6）</div>
   </div>
   <div class="sec-cap">我的模板（v1.7 · 一键开练+智能预填 · PRD 5.6.6）</div>
   <div style="display:flex;gap:10px;overflow-x:auto;padding:2px 14px 6px;scrollbar-width:none">
@@ -568,9 +588,17 @@ function pHome(){
   </div>
   <div class="exc" style="border-color:rgba(34,197,94,.4)">
     <div class="hd"><div class="idx" style="background:linear-gradient(140deg,#5B6B8C,#7C8BA1);font-size:13px">热</div>
-      <div class="grow"><h4>热身 · 动态热身 <span style="color:#4ADE80;font-size:11px;font-weight:700">✓ 已完成 8min</span></h4>
-      <div class="rx">踝/髋/胸椎打开 + 空杆渐进 —— 今日课表三段结构之首（完整热身库二批）</div></div>
+      <div class="grow"><h4>热身 · 上肢推日序列（T8 具体动作）<span style="color:#4ADE80;font-size:11px;font-weight:700">✓ 已完成 12min</span></h4>
+      <div class="rx">五层热身按日类型 pattern · 每条可点开分步要点/图示/语音（PRD 5.2.2 v1.7.4）</div></div>
     </div>
+    <div style="display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none">
+      ${[['泡沫轴·胸椎','60s','✓'],['胸椎旋转·开书','10/侧','✓'],['肩环绕','15×2','✓'],['弹力带肩外旋','15×2','✓'],['肩胛俯卧撑','10×2','✓'],['空杆递增','10-5','▶']].map(x=>`
+      <div style="flex:none;background:var(--card2);border:1px solid ${x[2]==='✓'?'rgba(34,197,94,.4)':'rgba(249,115,22,.5)'};border-radius:12px;padding:8px 10px;min-width:86px">
+        <div style="font-size:11px;font-weight:700">${x[0]}</div>
+        <div style="font-size:10px;color:var(--dim);margin-top:2px">${x[1]} · ${x[2]}</div>
+      </div>`).join('')}
+    </div>
+    <div class="rx" style="margin-top:4px">T8 热身库 22 条按日类型打包——练腿日=泡沫轴<b>股四头</b>→<b>腘绳肌</b>→<b>踝背屈</b>（压脚踝）→<b>胫骨前肌</b>激活→<b>臀桥</b>→<b>肩环绕</b>（用户示例粒度，v1.7.4）</div>
   </div>
   ${itemCard(t.items[0],1,true)}
   <div class="restcard" id="homeRest">
@@ -877,6 +905,17 @@ function pRun(){
     <h2>${it.ex.n} <button class="sh-x" id="openSheet" style="margin-left:8px">要点速览 ↕</button><button class="sh-x" id="openSwap" style="margin-left:6px">换动作 ⇄</button><button class="sh-x" id="openHist" style="margin-left:6px">📈 历史</button></h2>
     <div class="en">${it.ex.e}</div>
     <div class="ref">上次：5×5 @47.5kg 全完成 → 加重引擎建议 <b>50kg（+2.5）</b>｜ <b>PR 60kg</b>（v1.7：动作卡常驻上次+PR）</div>
+  </div>
+  <div class="card" style="padding:11px 14px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <b style="font-size:12px">🔥 热身清单 · 上肢推日（T8 · v1.7.4）</b>
+      <span style="margin-left:auto;color:#4ADE80;font-size:11px;font-weight:700">✓ 5/6</span>
+    </div>
+    <div style="display:flex;gap:6px;overflow-x:auto;margin-top:8px;scrollbar-width:none">
+      ${[['泡沫轴·胸椎 60s','✓'],['胸椎旋转 10/侧','✓'],['肩环绕 15×2','✓'],['肩外旋 15×2','✓'],['肩胛俯卧撑 10×2','✓'],['空杆递增','▶ 当前']].map(x=>`
+      <div style="flex:none;background:${x[1]==='▶ 当前'?'rgba(249,115,22,.1)':'var(--card2)'};border:1px solid ${x[1]==='✓'?'rgba(34,197,94,.35)':x[1]==='▶ 当前'?'rgba(249,115,22,.5)':'var(--line)'};border-radius:10px;padding:6px 10px;font-size:10.5px">${x[0]} <span style="color:${x[1]==='✓'?'#4ADE80':'#fdba74'}">${x[1]}</span></div>`).join('')}
+    </div>
+    <div style="font-size:9.5px;color:var(--dim);margin-top:6px">每条点开=分步要点+书图（asset://）+🔊语音播报 ｜ 完成态与正式组同轨 ｜ 下方灰区组行=热身组记录（杠铃专项热身组）</div>
   </div>
   <div class="setctl">
     <button>+ 加一组</button><button>− 删组</button><button>⚙ 序列</button><button>改为单侧 L/R</button><button>配对超级组</button>
